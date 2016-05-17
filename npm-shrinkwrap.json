@@ -1,0 +1,17 @@
+{
+  "name": "wavekilde",
+  "version": "1.0.0",
+  "dependencies": {
+    "neatjs": {
+      "version": "0.3.1",
+      "from": "neatjs@0.3.1",
+      "dependencies": {
+        "win-utils": {
+          "version": "0.1.2",
+          "from": "win-utils@0.1.1",
+          "resolved": "git+https://github.com/bthj/win-utils.git"
+        }
+      }
+    }
+  }
+}
