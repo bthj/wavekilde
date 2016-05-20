@@ -41,3 +41,11 @@ $ webpack-dev-server --progress --colors --port 8111 --content-base dist/
 and changes can be viewed by reloading http://localhost:8111.
 
 To have changes [automatically refreshed](https://webpack.github.io/docs/webpack-dev-server.html#automatic-refresh) in the browser, an URL like the following can be visited instead in the browser:  http://localhost:8111/webpack-dev-server/index.html
+
+### npm start script
+
+The development server can also be run by simply issuing:
+
+```
+$ npm start
+```

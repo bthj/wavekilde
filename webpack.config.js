@@ -20,9 +20,11 @@ var config = {
       { test: /\.css$/, loader: "style!css" },
     ],
   },
-
+  devtool: 'source-map',
   devServer: {
-    historyApiFallback: true
+    historyApiFallback: true,
+    contentBase: './dist/',
+    port: 8113
   }
 
 };

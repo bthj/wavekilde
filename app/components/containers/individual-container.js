@@ -1,6 +1,8 @@
 import React from 'react';
 import IndividualGrid from '../views/individual-grid';
 
+import { Waveform } from 'react-d3-components';
+
 
 const IndividualContainer = React.createClass({
 
@@ -11,7 +13,7 @@ const IndividualContainer = React.createClass({
       memberSettings: [],
       audioCtx: audioCtx,
       // Create an empty two-second buffer at the sample rate of the AudioContext
-      frameCount: audioCtx.sampleRate * 30.0
+      frameCount: audioCtx.sampleRate * 3
     }
   },
   componentWillReceiveProps: function( nextProps ) {
@@ -61,12 +63,43 @@ const IndividualContainer = React.createClass({
     }
   },
 
+  remapNumberToRange: function( inputNumber, fromMin, fromMax, toMin, toMax ) {
+    return (inputNumber - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
+  },
+  getWaveformVisualizationDataFromOutputs: function( memberOutputs ) {
+    // console.log("memberOutputs");
+    // console.log(memberOutputs);
+
+    return [
+      {
+        label: 'Output 1',
+        values: memberOutputs.map( function(oneSample, index) {
+          return {
+            x: index,
+            y: this.remapNumberToRange(oneSample[1], -1, 1, 0, 1)
+          };
+        }.bind(this))
+      },
+      {
+        label: 'Output 2',
+        values: memberOutputs.map( function(oneSample, index) {
+          return {
+            x: index,
+            y: this.remapNumberToRange(oneSample[2], -1, 1, 0, 1)
+          };
+        }.bind(this))
+      }
+    ];
+  },
+
+
 
   render: function() {
-    console.log( "this.state.memberOutputs" );
-    console.log( this.state.memberOutputs );
+    // console.log( "this.state.memberOutputs" );
+    // console.log( this.state.memberOutputs );
 
-    // try populating one audio buffer from this member
+
+    ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
 
     if( this.state.memberOutputs.length ) {
@@ -99,8 +132,30 @@ const IndividualContainer = React.createClass({
       source.start();
     }
 
+
+    ///// waveform visualization
+
+    let waveformVisualizationData = this.state.memberOutputs.length ?
+      this.getWaveformVisualizationDataFromOutputs(this.state.memberOutputs)
+      : [{ label: 'no data', values: [{x:0, y:0}] },{ label: 'no data', values: [{x:0, y:0}] }];
+    let waveformWidth = 1200; // TODO: window.innerWidth gives 0;
+
+
     return(
-      <p>Hello IndividualContainer</p>
+      <div className="waveform-visualization">
+        <Waveform
+          data={waveformVisualizationData[0]}
+          width={waveformWidth}
+          height={200}
+          colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
+        />
+        <Waveform
+          data={waveformVisualizationData[1]}
+          width={waveformWidth}
+          height={200}
+          colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
+        />
+      </div>
     );
   }
 });
