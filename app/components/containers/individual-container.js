@@ -28,6 +28,7 @@ const IndividualContainer = React.createClass({
   },
   activateMember: function( member ) {
     const inputPeriods = this.state.frameCount / 66;
+    console.log("inputPeriods");console.log(inputPeriods);
     const variationOnPeriods = true;
 
     const sampleCount = this.state.frameCount;
@@ -54,10 +55,12 @@ const IndividualContainer = React.createClass({
 
       memberCPPN.recursiveActivation();
 
-      memberOutputs.push( [c,
-        memberCPPN.getOutputSignal(0),
-        memberCPPN.getOutputSignal(1) // TODO: can use spread operator?
-      ] );
+      let oneMemberOutputSet = [ c ];
+      for( let s=0; s < memberCPPN.outputNeuronCount; s++ ) {
+        oneMemberOutputSet.push( memberCPPN.getOutputSignal(s) );
+      }
+
+      memberOutputs.push( oneMemberOutputSet );
 
       this.setState({memberOutputs: memberOutputs});
     }
@@ -70,26 +73,21 @@ const IndividualContainer = React.createClass({
     // console.log("memberOutputs");
     // console.log(memberOutputs);
 
-    return [
-      {
-        label: 'Output 1',
+    let visualizationDataForAllNetworkOutputNodes = [];
+    console.log("memberOutputs[0].length");console.log(memberOutputs[0].length);
+    for( let o=1; o < memberOutputs[0].length; o++ ) {
+      visualizationDataForAllNetworkOutputNodes.push({
+        label: `Output ${o}`,
         values: memberOutputs.map( function(oneSample, index) {
           return {
             x: index,
-            y: this.remapNumberToRange(oneSample[1], -1, 1, 0, 1)
+            y: this.remapNumberToRange(oneSample[o], -1, 1, 0, 1)
           };
         }.bind(this))
-      },
-      {
-        label: 'Output 2',
-        values: memberOutputs.map( function(oneSample, index) {
-          return {
-            x: index,
-            y: this.remapNumberToRange(oneSample[2], -1, 1, 0, 1)
-          };
-        }.bind(this))
-      }
-    ];
+      });
+    }
+
+    return visualizationDataForAllNetworkOutputNodes;
   },
 
 
@@ -98,6 +96,14 @@ const IndividualContainer = React.createClass({
     // console.log( "this.state.memberOutputs" );
     // console.log( this.state.memberOutputs );
 
+    if( this.props.member ) {
+      var cppn = this.props.member.offspring.networkDecode();
+      console.log( "cppn.outputNeuronCount" );
+      console.log( cppn.outputNeuronCount );
+
+      console.log("this.state.memberOutputs[0]");
+      console.log(this.state.memberOutputs[0]);
+    }
 
     ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
@@ -137,24 +143,24 @@ const IndividualContainer = React.createClass({
 
     let waveformVisualizationData = this.state.memberOutputs.length ?
       this.getWaveformVisualizationDataFromOutputs(this.state.memberOutputs)
-      : [{ label: 'no data', values: [{x:0, y:0}] },{ label: 'no data', values: [{x:0, y:0}] }];
+      : [];
     let waveformWidth = 1200; // TODO: window.innerWidth gives 0;
 
+    let waveformNodes = waveformVisualizationData.map( function(oneWaveformVizData) {
+      return(
+        <Waveform
+          data={oneWaveformVizData}
+          width={waveformWidth}
+          height={200}
+          colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
+          key={oneWaveformVizData.label}
+        />
+      );
+    });
 
     return(
       <div className="waveform-visualization">
-        <Waveform
-          data={waveformVisualizationData[0]}
-          width={waveformWidth}
-          height={200}
-          colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
-        />
-        <Waveform
-          data={waveformVisualizationData[1]}
-          width={waveformWidth}
-          height={200}
-          colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
-        />
+        {waveformNodes.length ? waveformNodes : <em>Rendering waveform visualization</em>}
       </div>
     );
   }

@@ -35,7 +35,7 @@ const PopulationsContainer = React.createClass({
     const weightRange = 2;
     const connectionProportion = 1;
     const inputs = 2;
-    const outputs = 2;
+    const outputs = 18;
     const seedCount = 5;
     let initialPopulationSeeds = [];
 
@@ -96,7 +96,7 @@ const PopulationsContainer = React.createClass({
     console.log( this.state.populations );
     let individual = this.state.populations[0] ?
       this.state.populations[0][5] : null;
-      
+
     return(
       <IndividualContainer member={individual} />
     );
