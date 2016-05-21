@@ -1,4 +1,5 @@
 import React from 'react';
+import update from 'react-addons-update';
 import IndividualGrid from '../views/individual-grid';
 
 import { Waveform } from 'react-d3-components';
@@ -9,32 +10,43 @@ const IndividualContainer = React.createClass({
   getInitialState: function() {
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
-      memberOutputs: [],
+      memberOutputs: {},
       memberSettings: [],
       audioCtx: audioCtx,
       // Create an empty two-second buffer at the sample rate of the AudioContext
-      frameCount: audioCtx.sampleRate * 3
+      frameCount: audioCtx.sampleRate * 3 // * seconds
     }
   },
   componentWillReceiveProps: function( nextProps ) {
 
     if( nextProps.member ) {
-      this.activateMember( nextProps.member );
+      const inputPeriods = this.state.frameCount / 66;
+
+      this.activateMember( nextProps.member, inputPeriods );
     }
   },
 
   lerp: function( from, to, fraction ) {
     return from + fraction * ( to - from );
   },
-  activateMember: function( member ) {
-    const inputPeriods = this.state.frameCount / 66;
+  activateMember: function( member, inputPeriods, outputsToActivate, reverse ) {
     console.log("inputPeriods");console.log(inputPeriods);
+
     const variationOnPeriods = true;
 
     const sampleCount = this.state.frameCount;
 
-    let memberCPPN = member.offspring.networkDecode();
-    let memberOutputs = [];
+    const memberCPPN = member.offspring.networkDecode();
+
+    if( ! outputsToActivate ) {
+      outputsToActivate = Array.apply(null, Array(memberCPPN.outputNeuronCount))
+          .map(function(x,i){ return i; });  //wtf: http://www.2ality.com/2013/11/initializing-arrays.html
+    }
+
+    const memberOutputs = {};
+    outputsToActivate.forEach( function(oneOutputIndex) {
+      memberOutputs[ oneOutputIndex ] = [];
+    });
 
     for ( let c=0; c < sampleCount; c++ ) {
 
@@ -55,60 +67,67 @@ const IndividualContainer = React.createClass({
 
       memberCPPN.recursiveActivation();
 
-      let oneMemberOutputSet = [ c ];
-      for( let s=0; s < memberCPPN.outputNeuronCount; s++ ) {
-        oneMemberOutputSet.push( memberCPPN.getOutputSignal(s) );
-      }
+      outputsToActivate.forEach( function(oneOutputIndex) {
+        memberOutputs[ oneOutputIndex ].push(
+          memberCPPN.getOutputSignal(oneOutputIndex) );
+      });
 
-      memberOutputs.push( oneMemberOutputSet );
-
-      this.setState({memberOutputs: memberOutputs});
+      this.setState({
+        memberOutputs: update(this.state.memberOutputs, {$merge: memberOutputs})
+      });
     }
   },
 
   remapNumberToRange: function( inputNumber, fromMin, fromMax, toMin, toMax ) {
     return (inputNumber - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
   },
-  getWaveformVisualizationDataFromOutputs: function( memberOutputs ) {
-    // console.log("memberOutputs");
-    // console.log(memberOutputs);
+  getDownsampledArray: function( originalValues, taragetSampleCount ) {
 
+    const samplesInSection = Math.floor( originalValues.length / taragetSampleCount );
+
+    let downsampled = [];
+    originalValues.reduce(function(previousValue, currentValue, currentIndex, array) {
+      if( currentIndex % samplesInSection ) {
+        return previousValue + currentValue;
+      } else {
+        const averageInSection = previousValue / samplesInSection;
+        downsampled.push( averageInSection );
+        return currentValue;
+      }
+    });
+    return downsampled;
+  },
+  getDownsampledMemberOutputs: function( taragetSampleCount ) {
+    let downsampledMemberOutputs = {};
+    for( let outputIndex in this.state.memberOutputs ) {
+      downsampledMemberOutputs[outputIndex] = this.getDownsampledArray(
+        this.state.memberOutputs[outputIndex], taragetSampleCount );
+    }
+    return downsampledMemberOutputs;
+  },
+  getWaveformVisualizationDataFromOutputs: function( memberOutputs ) {
     let visualizationDataForAllNetworkOutputNodes = [];
-    console.log("memberOutputs[0].length");console.log(memberOutputs[0].length);
-    for( let o=1; o < memberOutputs[0].length; o++ ) {
+    for( let outputIndex in memberOutputs ) {
       visualizationDataForAllNetworkOutputNodes.push({
-        label: `Output ${o}`,
-        values: memberOutputs.map( function(oneSample, index) {
+        label: `Output ${outputIndex}`,
+        values: memberOutputs[outputIndex].map( function(oneSample, index) {
           return {
             x: index,
-            y: this.remapNumberToRange(oneSample[o], -1, 1, 0, 1)
+            y: this.remapNumberToRange(oneSample, -1, 1, 0, 1)
           };
         }.bind(this))
       });
     }
-
     return visualizationDataForAllNetworkOutputNodes;
   },
 
 
-
   render: function() {
-    // console.log( "this.state.memberOutputs" );
-    // console.log( this.state.memberOutputs );
-
-    if( this.props.member ) {
-      var cppn = this.props.member.offspring.networkDecode();
-      console.log( "cppn.outputNeuronCount" );
-      console.log( cppn.outputNeuronCount );
-
-      console.log("this.state.memberOutputs[0]");
-      console.log(this.state.memberOutputs[0]);
-    }
 
     ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
 
-    if( this.state.memberOutputs.length ) {
+    if( Object.keys(this.state.memberOutputs).length ) {
 
       // Stereo
       let channels = 2;
@@ -122,7 +141,7 @@ const IndividualContainer = React.createClass({
         // This gives us the actual ArrayBuffer that contains the data
         let nowBuffering = myArrayBuffer.getChannelData( channel );
         for( let i=0; i < this.state.frameCount; i++ ) {
-          nowBuffering[i] = this.state.memberOutputs[i][channel+1];
+          nowBuffering[i] = this.state.memberOutputs[channel][i];
         }
       }
 
@@ -141,17 +160,23 @@ const IndividualContainer = React.createClass({
 
     ///// waveform visualization
 
-    let waveformVisualizationData = this.state.memberOutputs.length ?
-      this.getWaveformVisualizationDataFromOutputs(this.state.memberOutputs)
-      : [];
     let waveformWidth = 1200; // TODO: window.innerWidth gives 0;
+
+    if( Object.keys(this.state.memberOutputs).length ) {
+      let downsampledMemberOutputs =
+        this.getDownsampledMemberOutputs( waveformWidth * 2 );
+      var waveformVisualizationData =
+        this.getWaveformVisualizationDataFromOutputs( downsampledMemberOutputs );
+    } else {
+      var waveformVisualizationData = [];
+    }
 
     let waveformNodes = waveformVisualizationData.map( function(oneWaveformVizData) {
       return(
         <Waveform
           data={oneWaveformVizData}
           width={waveformWidth}
-          height={200}
+          height={100}
           colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
           key={oneWaveformVizData.label}
         />
