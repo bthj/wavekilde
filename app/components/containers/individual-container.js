@@ -2,7 +2,7 @@ import React from 'react';
 import update from 'react-addons-update';
 import IndividualGrid from '../views/individual-grid';
 
-import { Waveform } from 'react-d3-components';
+import { Waveform, LineChart } from 'react-d3-components';
 
 
 const IndividualContainer = React.createClass({
@@ -20,9 +20,10 @@ const IndividualContainer = React.createClass({
   componentWillReceiveProps: function( nextProps ) {
 
     if( nextProps.member ) {
-      const inputPeriods = this.state.frameCount / 66;
+      const inputPeriods = this.state.frameCount / (this.state.frameCount/20);
+      // const inputPeriods = this.state.frameCount / 66;
 
-      this.activateMember( nextProps.member, inputPeriods );
+      this.activateMember( nextProps.member, inputPeriods, [0,1] );
     }
   },
 
@@ -45,8 +46,10 @@ const IndividualContainer = React.createClass({
 
     const memberOutputs = {};
     outputsToActivate.forEach( function(oneOutputIndex) {
-      memberOutputs[ oneOutputIndex ] = [];
-    });
+      memberOutputs[ oneOutputIndex ] = {
+        samples: [],
+        frequency: inputPeriods / (this.state.frameCount / this.state.audioCtx.sampleRate) };
+    }.bind(this));
 
     for ( let c=0; c < sampleCount; c++ ) {
 
@@ -68,14 +71,14 @@ const IndividualContainer = React.createClass({
       memberCPPN.recursiveActivation();
 
       outputsToActivate.forEach( function(oneOutputIndex) {
-        memberOutputs[ oneOutputIndex ].push(
+        memberOutputs[ oneOutputIndex ].samples.push(
           memberCPPN.getOutputSignal(oneOutputIndex) );
       });
-
-      this.setState({
-        memberOutputs: update(this.state.memberOutputs, {$merge: memberOutputs})
-      });
     }
+
+    this.setState({
+      memberOutputs: update(this.state.memberOutputs, {$merge: memberOutputs})
+    });
   },
 
   remapNumberToRange: function( inputNumber, fromMin, fromMax, toMin, toMax ) {
@@ -100,8 +103,11 @@ const IndividualContainer = React.createClass({
   getDownsampledMemberOutputs: function( taragetSampleCount ) {
     let downsampledMemberOutputs = {};
     for( let outputIndex in this.state.memberOutputs ) {
-      downsampledMemberOutputs[outputIndex] = this.getDownsampledArray(
-        this.state.memberOutputs[outputIndex], taragetSampleCount );
+      downsampledMemberOutputs[outputIndex] = {
+        samples: this.getDownsampledArray(
+          this.state.memberOutputs[outputIndex].samples, taragetSampleCount ),
+        frequency: this.state.memberOutputs[outputIndex].frequency
+      };
     }
     return downsampledMemberOutputs;
   },
@@ -110,15 +116,19 @@ const IndividualContainer = React.createClass({
     for( let outputIndex in memberOutputs ) {
       visualizationDataForAllNetworkOutputNodes.push({
         label: `Output ${outputIndex}`,
-        values: memberOutputs[outputIndex].map( function(oneSample, index) {
+        values: memberOutputs[outputIndex].samples.map( function(oneSample, index) {
           return {
             x: index,
             y: this.remapNumberToRange(oneSample, -1, 1, 0, 1)
           };
-        }.bind(this))
+        }.bind(this)),
+        frequency: memberOutputs[outputIndex].frequency
       });
     }
     return visualizationDataForAllNetworkOutputNodes;
+  },
+  isAudible: function( frequency ) {
+    return 20 <= frequency && frequency <=20000;
   },
 
 
@@ -141,7 +151,7 @@ const IndividualContainer = React.createClass({
         // This gives us the actual ArrayBuffer that contains the data
         let nowBuffering = myArrayBuffer.getChannelData( channel );
         for( let i=0; i < this.state.frameCount; i++ ) {
-          nowBuffering[i] = this.state.memberOutputs[channel][i];
+          nowBuffering[i] = this.state.memberOutputs[channel].samples[i];
         }
       }
 
@@ -173,15 +183,26 @@ const IndividualContainer = React.createClass({
 
     let waveformNodes = waveformVisualizationData.map( function(oneWaveformVizData) {
       return(
-        <Waveform
-          data={oneWaveformVizData}
-          width={waveformWidth}
-          height={100}
-          colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
-          key={oneWaveformVizData.label}
-        />
+        this.isAudible( oneWaveformVizData.frequency ) ?
+          <Waveform
+            data={oneWaveformVizData}
+            width={waveformWidth}
+            height={100}
+            colorScale={ d3.scale.linear().domain([0,waveformWidth]).range(['#eb1785','#ff7b16'])}
+            key={oneWaveformVizData.label}
+          />
+          :
+          <LineChart
+            data={oneWaveformVizData}
+            width={waveformWidth}
+            height={100}
+            xAxis={{label:'x-label'}}
+            yAxis={{label:'y-label'}}
+            key={oneWaveformVizData.label}
+          />
+
       );
-    });
+    }.bind(this));
 
     return(
       <div className="waveform-visualization">
