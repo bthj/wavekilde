@@ -182,30 +182,17 @@ const IndividualContainer = React.createClass({
     return number?number<0?-1:1:0;  // from http://stackoverflow.com/a/9079549/169858
   },
   ensureBufferStartsAndEndsAtZero: function( buffer ) {
+    const samplesToFadeFromZero = 128;
     if( 0 != buffer[0] ) {
-      const firstSampleSign = this.sign( buffer[0] );
-      let shifts = 0;
-      do { // if the waveform never crosses zero, like some lfos might, this could be endless
-        // let shiftedSample = buffer.shift();
-        buffer.push( buffer.shift() );
-        shifts++;
-        // // add the difference from what we're chopping off the head, as a new sample to the tail
-        // let deltaToCurrentHead = buffer[0] - shiftedSample;
-        // buffer.push( buffer[buffer.length-1] + deltaToCurrentHead );
-      } while( this.sign( buffer[0] ) == firstSampleSign && shifts < this.state.frameCount  );
-      console.log(`shifted ${shifts} samples`);
-      buffer[0] = 0.0;
+      for( let i=0; i < samplesToFadeFromZero; i++ ) {
+        buffer[i] = buffer[i] * (i/samplesToFadeFromZero);
+      }
     }
     if( 0 != buffer[buffer.length-1] ) {
-      // let's also make sure we end and zero, potentially shortening the waveform by a few samples
-      const lastSampleSign = this.sign( buffer[buffer.length-1] );
-      let pops = 0;
-      do {
-        buffer.pop();
-        pops++;
-      } while( this.sign(buffer[buffer.length-1]) == lastSampleSign && pops < this.state.frameCount );
-      console.log(`popped ${pops} samples`);
-      buffer[buffer.length-1] = 0.0;
+      for( let i=samplesToFadeFromZero; i > 0; --i ) {
+        buffer[buffer.length-i] =
+          buffer[buffer.length-i] * ((i-1) / samplesToFadeFromZero);
+      }
     }
     return buffer;
   },
