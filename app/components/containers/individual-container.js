@@ -23,15 +23,31 @@ const IndividualContainer = React.createClass({
       const inputPeriods = this.state.frameCount / (this.state.frameCount/20);
       // const inputPeriods = this.state.frameCount / 66;
 
-      this.activateMember( nextProps.member, inputPeriods, [0,1] );
+      let outputsToActivate = [
+        {
+          index: 0,
+          frequency: 440.0  // A4
+        },
+        {
+          index: 1,
+          frequency: 4  // LFO
+        }
+      ];
+      this.activateMember( nextProps.member, outputsToActivate );
+      // this.activateMember( nextProps.member, null );
     }
   },
 
   lerp: function( from, to, fraction ) {
     return from + fraction * ( to - from );
   },
-  activateMember: function( member, inputPeriods, outputsToActivate, reverse ) {
-    console.log("inputPeriods");console.log(inputPeriods);
+  randomFromInterval: function(from,to) {
+    return Math.floor(Math.random()*(to-from+1)+from);
+  },
+  halfChance: function () {
+    return ( Math.random() < 0.5 ? 0 : 1 );
+  },
+  activateMember: function( member, outputsToActivate, reverse ) {
 
     const variationOnPeriods = true;
 
@@ -39,42 +55,61 @@ const IndividualContainer = React.createClass({
 
     const memberCPPN = member.offspring.networkDecode();
 
-    if( ! outputsToActivate ) {
+    if( ! outputsToActivate || ! outputsToActivate.length ) {
       outputsToActivate = Array.apply(null, Array(memberCPPN.outputNeuronCount))
-          .map(function(x,i){ return i; });  //wtf: http://www.2ality.com/2013/11/initializing-arrays.html
+          .map(function(x,i){
+            return {
+              index: i,
+              frequency: this.halfChance() ?
+                this.randomFromInterval( 1, 19 )  // LFO
+                : this.randomFromInterval( 20, 20000 ) // Audio frequency
+            };
+          }.bind(this));  //wtf: http://www.2ality.com/2013/11/initializing-arrays.html
     }
 
     const memberOutputs = {};
-    outputsToActivate.forEach( function(oneOutputIndex) {
-      memberOutputs[ oneOutputIndex ] = {
+    outputsToActivate.forEach( function(oneOutput) {
+      memberOutputs[ oneOutput.index ] = {
         samples: [],
-        frequency: inputPeriods / (this.state.frameCount / this.state.audioCtx.sampleRate) };
+        frequency: oneOutput.frequency,
+        inputPeriods: oneOutput.frequency *
+          (this.state.frameCount / this.state.audioCtx.sampleRate)
+      };
     }.bind(this));
 
-    for ( let c=0; c < sampleCount; c++ ) {
+    // let's only activate the network once per unique input perods value / sample
+    let uniqueInputPeriods = new Set( outputsToActivate.map( o =>
+      memberOutputs[o.index].inputPeriods ) );
+    uniqueInputPeriods.forEach(function( inputPeriods ) {
 
-      let rangeFraction = c / (sampleCount-1);
+      for ( let c=0; c < sampleCount; c++ ) {
 
-      let mainInputSignal = this.lerp( -1, 1, rangeFraction );
+        let rangeFraction = c / (sampleCount-1);
 
-      if( variationOnPeriods ) {
-        var extraInput = Math.sin( inputPeriods * mainInputSignal );
-      } else {
-        var extraInput = Math.sin( inputPeriods * Math.abs(mainInputSignal) );
+        let mainInputSignal = this.lerp( -1, 1, rangeFraction );
+
+        if( variationOnPeriods ) {
+          var extraInput = Math.sin( inputPeriods * mainInputSignal );
+        } else {
+          var extraInput = Math.sin( inputPeriods * Math.abs(mainInputSignal) );
+        }
+
+        let inputSignals = [ extraInput, mainInputSignal ];
+
+        memberCPPN.clearSignals();
+        memberCPPN.setInputSignals( inputSignals );
+
+        memberCPPN.recursiveActivation();
+
+        outputsToActivate.forEach( function(oneOutput) {
+          if( inputPeriods == memberOutputs[ oneOutput.index ].inputPeriods ) {
+
+            memberOutputs[ oneOutput.index ].samples.push(
+              memberCPPN.getOutputSignal(oneOutput.index) );
+          }
+        });
       }
-
-      let inputSignals = [ extraInput, mainInputSignal ];
-
-      memberCPPN.clearSignals();
-      memberCPPN.setInputSignals( inputSignals );
-
-      memberCPPN.recursiveActivation();
-
-      outputsToActivate.forEach( function(oneOutputIndex) {
-        memberOutputs[ oneOutputIndex ].samples.push(
-          memberCPPN.getOutputSignal(oneOutputIndex) );
-      });
-    }
+    }.bind(this));
 
     this.setState({
       memberOutputs: update(this.state.memberOutputs, {$merge: memberOutputs})
@@ -84,9 +119,9 @@ const IndividualContainer = React.createClass({
   remapNumberToRange: function( inputNumber, fromMin, fromMax, toMin, toMax ) {
     return (inputNumber - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
   },
-  getDownsampledArray: function( originalValues, taragetSampleCount ) {
+  getDownsampledArray: function( originalValues, targetSampleCount ) {
 
-    const samplesInSection = Math.floor( originalValues.length / taragetSampleCount );
+    const samplesInSection = Math.floor( originalValues.length / targetSampleCount );
 
     let downsampled = [];
     originalValues.reduce(function(previousValue, currentValue, currentIndex, array) {
@@ -100,12 +135,12 @@ const IndividualContainer = React.createClass({
     });
     return downsampled;
   },
-  getDownsampledMemberOutputs: function( taragetSampleCount ) {
+  getDownsampledMemberOutputs: function( targetSampleCount ) {
     let downsampledMemberOutputs = {};
     for( let outputIndex in this.state.memberOutputs ) {
       downsampledMemberOutputs[outputIndex] = {
         samples: this.getDownsampledArray(
-          this.state.memberOutputs[outputIndex].samples, taragetSampleCount ),
+          this.state.memberOutputs[outputIndex].samples, targetSampleCount ),
         frequency: this.state.memberOutputs[outputIndex].frequency
       };
     }
