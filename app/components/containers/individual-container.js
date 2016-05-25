@@ -9,12 +9,15 @@ const IndividualContainer = React.createClass({
 
   getInitialState: function() {
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
+    const duration = 3;  // in seconds
     return {
       memberOutputs: {},
       memberSettings: [],
       audioCtx: audioCtx,
-      // Create an empty two-second buffer at the sample rate of the AudioContext
-      frameCount: audioCtx.sampleRate * 3 // * seconds
+      duration: duration,
+      // Create an empty two-second buffer at the sample rate of the AudioContext,
+      // times the number of seconds
+      frameCount: audioCtx.sampleRate * duration
     }
   },
   componentWillReceiveProps: function( nextProps ) {
@@ -30,7 +33,15 @@ const IndividualContainer = React.createClass({
         },
         {
           index: 1,
-          frequency: 4  // LFO
+          frequency: 440.0  // A4
+        },
+        {
+          index: 2,
+          frequency: 19  // LFO
+        },
+        {
+          index: 3,
+          frequency: 11  // LFO
         }
       ];
       this.activateMember( nextProps.member, outputsToActivate );
@@ -105,9 +116,10 @@ const IndividualContainer = React.createClass({
           if( inputPeriods == memberOutputs[ oneOutput.index ].inputPeriods ) {
 
             memberOutputs[ oneOutput.index ].samples.push(
-              memberCPPN.getOutputSignal(oneOutput.index) );
+              memberCPPN.getOutputSignal(oneOutput.index)
+            );
           }
-        });
+        }.bind(this));
       }
     }.bind(this));
 
@@ -195,9 +207,35 @@ const IndividualContainer = React.createClass({
       let source = this.state.audioCtx.createBufferSource();
       // set the buffer in the AudioBufferSourceNode
       source.buffer = myArrayBuffer;
-      // connect the AudioBufferSourceNode to the
+
+      // create a "Voltage Controlled" Amplifier
+      let VCA = this.state.audioCtx.createGain();
+
+      // set the amplifier's initial gain value
+      VCA.gain.value = .5;
+
+      // connect the audio buffer to the Amplifier
+      source.connect( VCA );
+
+      // connect the Amplifier to the
       // destination so we can hear the sound
-      source.connect(this.state.audioCtx.destination);
+      VCA.connect(this.state.audioCtx.destination);
+
+      // start controlling the amplifier's gain
+      // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
+      VCA.gain.setValueCurveAtTime(
+        new Float32Array( this.state.memberOutputs[2].samples.map(function(oneSample) {
+          return this.remapNumberToRange(oneSample, -1, 1, 0, 1);
+        }.bind(this)) ),
+        this.state.audioCtx.currentTime, this.state.duration
+      );
+      // use a control signal to mess with the detuning of the audio source
+      source.detune.setValueCurveAtTime(
+        new Float32Array( this.state.memberOutputs[3].samples.map(function(oneSample) {
+          return this.remapNumberToRange(oneSample, -1, 1, -1000, 1000);
+        }.bind(this)) ),
+        this.state.audioCtx.currentTime, this.state.duration
+      );
       // start the source playing
       source.start();
     }
