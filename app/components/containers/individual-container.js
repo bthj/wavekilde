@@ -178,6 +178,37 @@ const IndividualContainer = React.createClass({
     return 20 <= frequency && frequency <=20000;
   },
 
+  sign: function( number ) {
+    return number?number<0?-1:1:0;  // from http://stackoverflow.com/a/9079549/169858
+  },
+  ensureBufferStartsAndEndsAtZero: function( buffer ) {
+    if( 0 != buffer[0] ) {
+      const firstSampleSign = this.sign( buffer[0] );
+      let shifts = 0;
+      do { // if the waveform never crosses zero, like some lfos might, this could be endless
+        // let shiftedSample = buffer.shift();
+        buffer.push( buffer.shift() );
+        shifts++;
+        // // add the difference from what we're chopping off the head, as a new sample to the tail
+        // let deltaToCurrentHead = buffer[0] - shiftedSample;
+        // buffer.push( buffer[buffer.length-1] + deltaToCurrentHead );
+      } while( this.sign( buffer[0] ) == firstSampleSign && shifts < this.state.frameCount  );
+      console.log(`shifted ${shifts} samples`);
+      buffer[0] = 0.0;
+    }
+    if( 0 != buffer[buffer.length-1] ) {
+      // let's also make sure we end and zero, potentially shortening the waveform by a few samples
+      const lastSampleSign = this.sign( buffer[buffer.length-1] );
+      let pops = 0;
+      do {
+        buffer.pop();
+        pops++;
+      } while( this.sign(buffer[buffer.length-1]) == lastSampleSign && pops < this.state.frameCount );
+      console.log(`popped ${pops} samples`);
+      buffer[buffer.length-1] = 0.0;
+    }
+    return buffer;
+  },
 
   render: function() {
 
@@ -197,8 +228,10 @@ const IndividualContainer = React.createClass({
 
         // This gives us the actual ArrayBuffer that contains the data
         let nowBuffering = myArrayBuffer.getChannelData( channel );
+        let networkOutputBuffer = this.ensureBufferStartsAndEndsAtZero(
+          this.state.memberOutputs[channel].samples );
         for( let i=0; i < this.state.frameCount; i++ ) {
-          nowBuffering[i] = this.state.memberOutputs[channel].samples[i];
+          nowBuffering[i] = networkOutputBuffer[i];
         }
       }
 
