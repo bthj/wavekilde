@@ -8,8 +8,8 @@ import { Waveform, LineChart } from 'react-d3-components';
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     const duration = 3;  // in seconds
+    const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
       memberSettings: [],
@@ -17,7 +17,9 @@ const IndividualContainer = React.createClass({
       duration: duration,
       // Create an empty two-second buffer at the sample rate of the AudioContext,
       // times the number of seconds
-      frameCount: audioCtx.sampleRate * duration
+      frameCount: audioCtx.sampleRate * duration,
+
+      networkIndividualSound: null
     }
   },
   componentWillReceiveProps: function( nextProps ) {
@@ -41,7 +43,7 @@ const IndividualContainer = React.createClass({
         },
         {
           index: 3,
-          frequency: 11  // LFO
+          frequency: 5511  // LFO
         }
       ];
       this.activateMember( nextProps.member, outputsToActivate );
@@ -59,6 +61,9 @@ const IndividualContainer = React.createClass({
     return ( Math.random() < 0.5 ? 0 : 1 );
   },
   activateMember: function( member, outputsToActivate, reverse ) {
+    this.setState({
+      networkIndividualSound: update(this.state.networkIndividualSound, {$set: null})
+    });
 
     const variationOnPeriods = true;
 
@@ -126,6 +131,7 @@ const IndividualContainer = React.createClass({
     this.setState({
       memberOutputs: update(this.state.memberOutputs, {$merge: memberOutputs})
     });
+    console.log("Done activating member outputs");
   },
 
   remapNumberToRange: function( inputNumber, fromMin, fromMax, toMin, toMax ) {
@@ -197,18 +203,29 @@ const IndividualContainer = React.createClass({
     return buffer;
   },
 
+  playAudioRendering: function() {
+
+    let soundToPlay = this.state.audioCtx.createBufferSource();
+    soundToPlay.buffer = this.state.networkIndividualSound;
+    soundToPlay.connect( this.state.audioCtx.destination );
+    soundToPlay.start();
+  },
+
   render: function() {
 
     ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
 
-    if( Object.keys(this.state.memberOutputs).length ) {
+    if( Object.keys(this.state.memberOutputs).length && ! this.state.networkIndividualSound) {
 
       // Stereo
       let channels = 2;
 
-      let myArrayBuffer = this.state.audioCtx.createBuffer(
-        channels, this.state.frameCount, this.state.audioCtx.sampleRate );
+      const offlineCtx = new OfflineAudioContext( channels,
+        this.state.audioCtx.sampleRate*this.state.duration, this.state.audioCtx.sampleRate);
+
+      let myArrayBuffer = offlineCtx.createBuffer(
+        channels, this.state.frameCount, offlineCtx.sampleRate );
 
       // Fill the buffer with signals according to the network outputs
       for( let channel=0; channel < channels; channel++ ) {
@@ -224,12 +241,12 @@ const IndividualContainer = React.createClass({
 
       // Get an AudioBufferSourceNode.
       // This is the AudioNode to use when we want to play an AudioBuffer
-      let source = this.state.audioCtx.createBufferSource();
+      let source = offlineCtx.createBufferSource();
       // set the buffer in the AudioBufferSourceNode
       source.buffer = myArrayBuffer;
 
       // create a "Voltage Controlled" Amplifier
-      let VCA = this.state.audioCtx.createGain();
+      let VCA = offlineCtx.createGain();
 
       // set the amplifier's initial gain value
       VCA.gain.value = .5;
@@ -239,7 +256,7 @@ const IndividualContainer = React.createClass({
 
       // connect the Amplifier to the
       // destination so we can hear the sound
-      VCA.connect(this.state.audioCtx.destination);
+      VCA.connect(offlineCtx.destination);
 
       // start controlling the amplifier's gain
       // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
@@ -247,17 +264,33 @@ const IndividualContainer = React.createClass({
         new Float32Array( this.state.memberOutputs[2].samples.map(function(oneSample) {
           return this.remapNumberToRange(oneSample, -1, 1, 0, 1);
         }.bind(this)) ),
-        this.state.audioCtx.currentTime, this.state.duration
+        offlineCtx.currentTime, this.state.duration
       );
       // use a control signal to mess with the detuning of the audio source
       source.detune.setValueCurveAtTime(
         new Float32Array( this.state.memberOutputs[3].samples.map(function(oneSample) {
           return this.remapNumberToRange(oneSample, -1, 1, -1000, 1000);
         }.bind(this)) ),
-        this.state.audioCtx.currentTime, this.state.duration
+        offlineCtx.currentTime, this.state.duration*1.1
+        // multiplier to have the k-rate (detune) param cover the entire playback duration
+        // ...with limited understanding of how those k-rate params actually work:
+        // https://developer.mozilla.org/en-US/docs/Web/API/AudioParam#k-rate
       );
       // start the source playing
       source.start();
+
+      // Offline rendering of the audio graph to a reusable buffer
+      offlineCtx.startRendering().then(function( renderedBuffer ) {
+        console.log('Rendering completed successfully');
+
+        this.setState({
+          networkIndividualSound: renderedBuffer
+        }, function() {
+          this.playAudioRendering();
+        });
+      }.bind(this)).catch(function( err ) {
+        console.log('Rendering failed: ' + err);
+      });
     }
 
 
@@ -300,6 +333,11 @@ const IndividualContainer = React.createClass({
     return(
       <div className="waveform-visualization">
         {waveformNodes.length ? waveformNodes : <em>Rendering waveform visualization</em>}
+        {
+          this.state.networkIndividualSound ?
+          <button onClick={this.playAudioRendering}>Play</button>
+          : <em>waiting for rendering</em>
+        }
       </div>
     );
   }
