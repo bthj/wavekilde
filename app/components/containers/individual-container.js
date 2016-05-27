@@ -43,11 +43,15 @@ const IndividualContainer = React.createClass({
         },
         {
           index: 3,
-          frequency: 0  // LFO for FM
+          frequency: 880  // LFO for FM
         },
         {
           index: 4,
           frequency: 14  // LFO for filter frequency
+        },
+        {
+          index: 5,
+          frequency: 14  // LFO for distortion
         }
       ];
       this.activateMember( nextProps.member, outputsToActivate );
@@ -259,10 +263,12 @@ const IndividualContainer = React.createClass({
       biquadFilter.type = 'lowpass'; // moar types at https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
       biquadFilter.frequency.value = 1000;
 
-      source.connect( biquadFilter );
+      let distortion = offlineCtx.createWaveShaper();
 
+
+      source.connect( distortion );
+      distortion.connect( biquadFilter );
       biquadFilter.connect( VCA );
-
       // connect the Amplifier to the
       // destination so we can hear the sound
       VCA.connect(offlineCtx.destination);
@@ -293,6 +299,8 @@ const IndividualContainer = React.createClass({
         }.bind(this)) ),
         offlineCtx.currentTime, this.state.duration
       ); // TODO: use network outputs to control filter's gain or Q ?
+      // distortion
+      distortion.curve = new Float32Array(this.state.memberOutputs[5].samples);
 
       // start the source playing
       source.start();
