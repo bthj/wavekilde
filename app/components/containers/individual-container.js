@@ -8,7 +8,7 @@ import { Waveform, LineChart } from 'react-d3-components';
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 3;  // in seconds
+    const duration = 4;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -39,11 +39,15 @@ const IndividualContainer = React.createClass({
         },
         {
           index: 2,
-          frequency: 19  // LFO
+          frequency: 0  // LFO for AM
         },
         {
           index: 3,
-          frequency: 5511  // LFO
+          frequency: 0  // LFO for FM
+        },
+        {
+          index: 4,
+          frequency: 14  // LFO for filter frequency
         }
       ];
       this.activateMember( nextProps.member, outputsToActivate );
@@ -99,6 +103,7 @@ const IndividualContainer = React.createClass({
     uniqueInputPeriods.forEach(function( inputPeriods ) {
 
       for ( let c=0; c < sampleCount; c++ ) {
+        if( c % 10000 == 0 ) console.log(`activating network for sample ${c} and input period ${inputPeriods}`);
 
         let rangeFraction = c / (sampleCount-1);
 
@@ -247,16 +252,21 @@ const IndividualContainer = React.createClass({
 
       // create a "Voltage Controlled" Amplifier
       let VCA = offlineCtx.createGain();
-
       // set the amplifier's initial gain value
       VCA.gain.value = .5;
 
-      // connect the audio buffer to the Amplifier
-      source.connect( VCA );
+      let biquadFilter = offlineCtx.createBiquadFilter();
+      biquadFilter.type = 'lowpass'; // moar types at https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
+      biquadFilter.frequency.value = 1000;
+
+      source.connect( biquadFilter );
+
+      biquadFilter.connect( VCA );
 
       // connect the Amplifier to the
       // destination so we can hear the sound
       VCA.connect(offlineCtx.destination);
+
 
       // start controlling the amplifier's gain
       // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
@@ -276,6 +286,14 @@ const IndividualContainer = React.createClass({
         // ...with limited understanding of how those k-rate params actually work:
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioParam#k-rate
       );
+      // assign a sample array from one neural network output to sweep the filter
+      biquadFilter.frequency.setValueCurveAtTime(
+        new Float32Array(this.state.memberOutputs[4].samples.map(function(oneSample) {
+          return this.remapNumberToRange(oneSample, -1, 1, 0, 2000);
+        }.bind(this)) ),
+        offlineCtx.currentTime, this.state.duration
+      ); // TODO: use network outputs to control filter's gain or Q ?
+
       // start the source playing
       source.start();
 
@@ -284,7 +302,7 @@ const IndividualContainer = React.createClass({
         console.log('Rendering completed successfully');
 
         this.setState({
-          networkIndividualSound: renderedBuffer
+          networkIndividualSound: this.ensureBufferStartsAndEndsAtZero( renderedBuffer )
         }, function() {
           this.playAudioRendering();
         });
