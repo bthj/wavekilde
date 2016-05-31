@@ -8,7 +8,7 @@ import { Waveform, LineChart } from 'react-d3-components';
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 4;  // in seconds
+    const duration = 1;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -58,6 +58,13 @@ const IndividualContainer = React.createClass({
       // this.activateMember( nextProps.member, null );
     }
   },
+
+  componentDidMount: function() {
+
+    console.log('document.getElementsByClassName("population-footer")[0]');
+    console.log(document.getElementsByClassName("population-footer")[0]);
+  },
+
 
   lerp: function( from, to, fraction ) {
     return from + fraction * ( to - from );
@@ -162,6 +169,51 @@ const IndividualContainer = React.createClass({
     });
     return downsampled;
   },
+
+  getSpectrumSpansForAudioWaves: function( audioWaveCount, oneWaveFraction, oneWaveMiddleFraction ) {
+    const waveSpectrumSpans = new Map();
+    for( let i=0; i < audioWaveCount; i++ ) {
+      let spectrumStart = i * oneWaveFraction - 1 // -1 as we're working with the range -1 to 1
+      let spectrumStartFading =
+        spectrumStart - ( i ? oneWaveMiddleFraction : 0 ); // to start fading in the adjacent span
+      let spectrumMiddle = spectrumStart + oneWaveMiddleFraction;
+      let spectrumEnd = spectrumStart + oneWaveFraction
+      let spectrumEndFading =
+        spectrumEnd + ( (i+1) < audioWaveCount ? oneWaveMiddleFraction : 0 ); // to fade into the adjacent span
+      waveSpectrumSpans.set( i, {
+        start: spectrumStartFading,
+        middle: spectrumMiddle,
+        end: spectrumEndFading
+      });
+    }
+    // console.log(`oneWaveFraction: ${oneWaveFraction}, oneWaveMiddleFraction: ${oneWaveMiddleFraction}`);
+    // console.log("waveSpectrumSpans");console.log(waveSpectrumSpans);
+    return waveSpectrumSpans;
+  },
+  getGainValuesPerAudioWave: function( audioWaveCount, controlWave ) {
+    const oneWaveFraction = 2 / audioWaveCount; // 2 as -1 to 1 spans two integers
+    const oneWaveMiddleFraction = oneWaveFraction / 2;
+    const waveSpectrumSpans =
+      this.getSpectrumSpansForAudioWaves( audioWaveCount, oneWaveFraction, oneWaveMiddleFraction );
+    const gainValues = new Map();
+    [...Array(audioWaveCount).keys()].forEach( audioWaveNr => {
+      gainValues.set( audioWaveNr, [] );
+    });
+    controlWave.forEach( oneSample => {
+      for( let [waveNr, spans] of waveSpectrumSpans.entries() ) {
+        let spectrum = waveSpectrumSpans.get(waveNr);
+        if( spectrum.start < oneSample && oneSample < spectrum.end ) {
+          let gain = 1 - Math.abs(spectrum.middle - oneSample) / oneWaveFraction;
+          gainValues.get( waveNr ).push( gain );
+        } else {
+          gainValues.get( waveNr ).push( 0 );
+        }
+      }
+    });
+    console.log("gainValues");console.log(gainValues);
+    return gainValues;
+  },
+
   getDownsampledMemberOutputs: function( targetSampleCount ) {
     let downsampledMemberOutputs = {};
     for( let outputIndex in this.state.memberOutputs ) {
@@ -212,12 +264,25 @@ const IndividualContainer = React.createClass({
     return buffer;
   },
 
+
+  showMixGains: function( timestamp ) {
+      if( !this.mixGainsStart ) this.mixGainsStart = timestamp;
+      let playbackProgressInSeconds = (timestamp - this.mixGainsStart)/1000;
+      console.log(`time percentage: ${playbackProgressInSeconds / this.state.duration}`);
+      if( playbackProgressInSeconds < this.state.duration ) {
+        window.requestAnimationFrame( this.showMixGains );
+      }
+  },
+
   playAudioRendering: function() {
 
     let soundToPlay = this.state.audioCtx.createBufferSource();
     soundToPlay.buffer = this.state.networkIndividualSound;
     soundToPlay.connect( this.state.audioCtx.destination );
     soundToPlay.start();
+
+    this.mixGainsStart = null;
+    window.requestAnimationFrame( this.showMixGains );
   },
 
   render: function() {
@@ -253,6 +318,10 @@ const IndividualContainer = React.createClass({
       let source = offlineCtx.createBufferSource();
       // set the buffer in the AudioBufferSourceNode
       source.buffer = myArrayBuffer;
+
+
+      // let gainValues = this.getGainValuesPerAudioWave( 5, this.state.memberOutputs[5].samples );
+      // let oneGainArray = gainValues.get(2);
 
       // create a "Voltage Controlled" Amplifier
       let VCA = offlineCtx.createGain();
@@ -305,10 +374,15 @@ const IndividualContainer = React.createClass({
       // start the source playing
       source.start();
 
+
+
+
       // Offline rendering of the audio graph to a reusable buffer
       offlineCtx.startRendering().then(function( renderedBuffer ) {
         console.log('Rendering completed successfully');
 
+        // console.log("renderedBuffer.getChannelData(0)");
+        // console.log(renderedBuffer.getChannelData(0)[renderedBuffer.length-1]);
         this.setState({
           networkIndividualSound: this.ensureBufferStartsAndEndsAtZero( renderedBuffer )
         }, function() {
