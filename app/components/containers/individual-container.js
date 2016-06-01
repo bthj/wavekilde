@@ -8,7 +8,7 @@ import { Waveform, LineChart } from 'react-d3-components';
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 10;  // in seconds
+    const duration = 1;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -59,12 +59,12 @@ const IndividualContainer = React.createClass({
 */
 
       let outputsToActivate = [
-        { index: 0, frequency: 111 }, // wave table mix control wave
+        { index: 0, frequency: 110.0 }, // wave table mix control wave
         { index: 1, frequency: 440.0 }, // wave table audio waves:
         { index: 2, frequency: 440.0 },
-        { index: 3, frequency: 440.0 },
-        { index: 4, frequency: 440.0 },
-        { index: 5, frequency: 440.0 },
+        // { index: 3, frequency: 440.0 },
+        // { index: 4, frequency: 440.0 },
+        // { index: 5, frequency: 440.0 },
         // { index: 6, frequency: 440.0 },
         // { index: 7, frequency: 440.0 },
         // { index: 8, frequency: 440.0 },
@@ -284,7 +284,12 @@ const IndividualContainer = React.createClass({
       if( !this.mixGainsStart ) this.mixGainsStart = timestamp;
       let playbackProgressInSeconds = (timestamp - this.mixGainsStart)/1000;
       let timePercentage = playbackProgressInSeconds / this.state.duration;
-      console.log(`time percentage: ${timePercentage}`);
+      let frameNr = Math.floor( timePercentage * this.state.frameCount );
+      let gainsPercentages = new Array(this.gainValues.size);
+      for( var [key, value] of this.gainValues.entries() ) {
+        gainsPercentages[key] = `gain${key}: ${value[frameNr]}`;
+      }
+      console.log(`time percentage: ${timePercentage},\t${gainsPercentages.join(',\t')}`);
       if( playbackProgressInSeconds < this.state.duration ) {
         window.requestAnimationFrame( this.showMixGains );
       }
@@ -376,7 +381,6 @@ const IndividualContainer = React.createClass({
         let output = this.state.memberOutputs[outputIndex];
         if( this.isAudible(output.frequency) && 0 != outputIndex ) {
           audioWaves.push( output );
-          console.log("output.frequency");console.log(output.frequency);
         }
       }
 
@@ -387,6 +391,7 @@ const IndividualContainer = React.createClass({
       // gain values for each audio wave in the wave table,
       // each controlled by a value curve from the calculated gain values
       let gainValues = this.getGainValuesPerAudioWave( audioWaves.length, waveTableMixWave.samples );
+      this.gainValues = gainValues; // temporary global assignment, for logging in showMixGains()
       // console.log("gainValues");console.log(gainValues);
       let audioSourceGains = [];
       gainValues.forEach( (oneGainControlArray, gainIndex) => {
