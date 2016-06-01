@@ -8,7 +8,7 @@ import { Waveform, LineChart } from 'react-d3-components';
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 1;  // in seconds
+    const duration = 10;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -27,6 +27,8 @@ const IndividualContainer = React.createClass({
     if( nextProps.member ) {
       const inputPeriods = this.state.frameCount / (this.state.frameCount/20);
       // const inputPeriods = this.state.frameCount / 66;
+
+/*    rather dub-steppy settings:
 
       let outputsToActivate = [
         {
@@ -54,6 +56,21 @@ const IndividualContainer = React.createClass({
           frequency: 14  // LFO for distortion
         }
       ];
+*/
+
+      let outputsToActivate = [
+        { index: 0, frequency: 111 }, // wave table mix control wave
+        { index: 1, frequency: 440.0 }, // wave table audio waves:
+        { index: 2, frequency: 440.0 },
+        { index: 3, frequency: 440.0 },
+        { index: 4, frequency: 440.0 },
+        { index: 5, frequency: 440.0 },
+        // { index: 6, frequency: 440.0 },
+        // { index: 7, frequency: 440.0 },
+        // { index: 8, frequency: 440.0 },
+        // { index: 9, frequency: 440.0 },
+      ];
+
       this.activateMember( nextProps.member, outputsToActivate );
       // this.activateMember( nextProps.member, null );
     }
@@ -101,7 +118,7 @@ const IndividualContainer = React.createClass({
     const memberOutputs = {};
     outputsToActivate.forEach( function(oneOutput) {
       memberOutputs[ oneOutput.index ] = {
-        samples: [],
+        samples: new Array(sampleCount),
         frequency: oneOutput.frequency,
         inputPeriods: oneOutput.frequency *
           (this.state.frameCount / this.state.audioCtx.sampleRate)
@@ -136,9 +153,8 @@ const IndividualContainer = React.createClass({
         outputsToActivate.forEach( function(oneOutput) {
           if( inputPeriods == memberOutputs[ oneOutput.index ].inputPeriods ) {
 
-            memberOutputs[ oneOutput.index ].samples.push(
-              memberCPPN.getOutputSignal(oneOutput.index)
-            );
+            memberOutputs[ oneOutput.index ].samples[c] =
+              memberCPPN.getOutputSignal(oneOutput.index);
           }
         }.bind(this));
       }
@@ -210,7 +226,6 @@ const IndividualContainer = React.createClass({
         }
       }
     });
-    console.log("gainValues");console.log(gainValues);
     return gainValues;
   },
 
@@ -268,7 +283,8 @@ const IndividualContainer = React.createClass({
   showMixGains: function( timestamp ) {
       if( !this.mixGainsStart ) this.mixGainsStart = timestamp;
       let playbackProgressInSeconds = (timestamp - this.mixGainsStart)/1000;
-      console.log(`time percentage: ${playbackProgressInSeconds / this.state.duration}`);
+      let timePercentage = playbackProgressInSeconds / this.state.duration;
+      console.log(`time percentage: ${timePercentage}`);
       if( playbackProgressInSeconds < this.state.duration ) {
         window.requestAnimationFrame( this.showMixGains );
       }
@@ -285,6 +301,34 @@ const IndividualContainer = React.createClass({
     window.requestAnimationFrame( this.showMixGains );
   },
 
+  getAudioBufferSource: function( samplesArrays, audioCtx ) {
+
+    let channels = samplesArrays.length;
+
+    let arrayBuffer = audioCtx.createBuffer(
+      channels, this.state.frameCount, audioCtx.sampleRate );
+
+    // Fill the buffer with signals according to the network outputs
+    for( let channel=0; channel < channels; channel++ ) {
+
+      // This gives us the actual ArrayBuffer that contains the data
+      let nowBuffering = arrayBuffer.getChannelData( channel );
+      let networkOutputBuffer = this.ensureBufferStartsAndEndsAtZero(
+        samplesArrays[channel] );
+      for( let i=0; i < this.state.frameCount; i++ ) {
+        nowBuffering[i] = networkOutputBuffer[i];
+      }
+    }
+
+    // Get an AudioBufferSourceNode.
+    // This is the AudioNode to use when we want to play an AudioBuffer
+    let audioBufferSourceNode = audioCtx.createBufferSource();
+    // set the buffer in the AudioBufferSourceNode
+    audioBufferSourceNode.buffer = arrayBuffer;
+
+    return audioBufferSourceNode;
+  },
+
   render: function() {
 
     ///// try populating one audio buffer from this member
@@ -292,11 +336,13 @@ const IndividualContainer = React.createClass({
 
     if( Object.keys(this.state.memberOutputs).length && ! this.state.networkIndividualSound) {
 
+      const offlineCtx = new OfflineAudioContext( 1 /*channels*/,
+        this.state.audioCtx.sampleRate*this.state.duration, this.state.audioCtx.sampleRate);
+/*
       // Stereo
       let channels = 2;
 
-      const offlineCtx = new OfflineAudioContext( channels,
-        this.state.audioCtx.sampleRate*this.state.duration, this.state.audioCtx.sampleRate);
+
 
       let myArrayBuffer = offlineCtx.createBuffer(
         channels, this.state.frameCount, offlineCtx.sampleRate );
@@ -318,10 +364,61 @@ const IndividualContainer = React.createClass({
       let source = offlineCtx.createBufferSource();
       // set the buffer in the AudioBufferSourceNode
       source.buffer = myArrayBuffer;
+*/
 
 
-      // let gainValues = this.getGainValuesPerAudioWave( 5, this.state.memberOutputs[5].samples );
-      // let oneGainArray = gainValues.get(2);
+      ///// wave table (or vector) synthes:
+      // get a control wave for the mix
+      let waveTableMixWave = this.state.memberOutputs[0];
+      // and the audio waves for the wave table, which the control wave will mix together
+      let audioWaves = [];
+      for( let outputIndex in this.state.memberOutputs ) {
+        let output = this.state.memberOutputs[outputIndex];
+        if( this.isAudible(output.frequency) && 0 != outputIndex ) {
+          audioWaves.push( output );
+          console.log("output.frequency");console.log(output.frequency);
+        }
+      }
+
+      let audioSources = audioWaves.map( oneOutput => {
+        return this.getAudioBufferSource( [oneOutput.samples], offlineCtx );
+      });
+
+      // gain values for each audio wave in the wave table,
+      // each controlled by a value curve from the calculated gain values
+      let gainValues = this.getGainValuesPerAudioWave( audioWaves.length, waveTableMixWave.samples );
+      // console.log("gainValues");console.log(gainValues);
+      let audioSourceGains = [];
+      gainValues.forEach( (oneGainControlArray, gainIndex) => {
+        let VCA = offlineCtx.createGain();
+        VCA.gain.setValueCurveAtTime(new Float32Array( oneGainControlArray.map( oneGainValue => {
+          return this.remapNumberToRange( oneGainValue, -1, 1, 0, 1 );
+        })), offlineCtx.currentTime, this.state.duration);
+        audioSourceGains.push( VCA );
+      });
+
+      // connect each audio source to a gain node,
+      audioSources.forEach(
+        (audioSource, index) => audioSource.connect( audioSourceGains[index] ) );
+
+      // instantiate a merger; mixer
+      let mergerNode = offlineCtx.createChannelMerger( audioSources.length );
+
+      // connect the output of each audio source gain to the mixer
+      audioSourceGains.forEach( (audioGain, index) => {
+          console.log(`connecting to channel #${index} of merger node`);
+          audioGain.connect( mergerNode, 0, index )
+        });
+
+      // connect the mixer to the output device
+      mergerNode.connect( offlineCtx.destination );
+
+      // start all the audio sources
+      let currentTime = offlineCtx.currentTime;
+      audioSources.forEach( audioSource => audioSource.start(currentTime) );
+
+
+/*    AM, FM, subtractive synthesis, distortion - TODO: to be assignable to waves in UI
 
       // create a "Voltage Controlled" Amplifier
       let VCA = offlineCtx.createGain();
@@ -334,7 +431,6 @@ const IndividualContainer = React.createClass({
 
       let distortion = offlineCtx.createWaveShaper();
 
-
       source.connect( distortion );
       distortion.connect( biquadFilter );
       biquadFilter.connect( VCA );
@@ -342,16 +438,15 @@ const IndividualContainer = React.createClass({
       // destination so we can hear the sound
       VCA.connect(offlineCtx.destination);
 
-
-      // start controlling the amplifier's gain
       // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
+      // start controlling the amplifier's gain:  AM
       VCA.gain.setValueCurveAtTime(
         new Float32Array( this.state.memberOutputs[2].samples.map(function(oneSample) {
           return this.remapNumberToRange(oneSample, -1, 1, 0, 1);
         }.bind(this)) ),
         offlineCtx.currentTime, this.state.duration
       );
-      // use a control signal to mess with the detuning of the audio source
+      // use a control signal to mess with the detuning of the audio source:  FM
       source.detune.setValueCurveAtTime(
         new Float32Array( this.state.memberOutputs[3].samples.map(function(oneSample) {
           return this.remapNumberToRange(oneSample, -1, 1, -1000, 1000);
@@ -361,7 +456,7 @@ const IndividualContainer = React.createClass({
         // ...with limited understanding of how those k-rate params actually work:
         // https://developer.mozilla.org/en-US/docs/Web/API/AudioParam#k-rate
       );
-      // assign a sample array from one neural network output to sweep the filter
+      // assign a sample array from one neural network output to sweep the filter:  subtractive synthesis
       biquadFilter.frequency.setValueCurveAtTime(
         new Float32Array(this.state.memberOutputs[4].samples.map(function(oneSample) {
           return this.remapNumberToRange(oneSample, -1, 1, 0, 2000);
@@ -371,9 +466,10 @@ const IndividualContainer = React.createClass({
       // distortion
       distortion.curve = new Float32Array(this.state.memberOutputs[5].samples);
 
+
       // start the source playing
       source.start();
-
+*/
 
 
 
