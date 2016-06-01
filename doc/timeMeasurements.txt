@@ -1,0 +1,23 @@
+
+### in UI thread:
+Activating network,
+      for 1 unique periods
+      and 1323000 samples,
+      took 3928.125  milliseconds.
+
+Activating network,
+      for 1 unique periods
+      and 2646000 samples,
+      took 7967.64  milliseconds.
+
+
+
+Activating network,
+      for 10 unique periods
+      and 1323000 samples,
+      took 34385.30500000001  milliseconds.
+
+Activating network,
+      for 10 unique periods
+      and 2646000 samples,
+      took 77425.84000000001  milliseconds.

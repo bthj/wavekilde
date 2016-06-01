@@ -8,7 +8,7 @@ import { Waveform, LineChart } from 'react-d3-components';
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 1;  // in seconds
+    const duration = 60;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -19,7 +19,8 @@ const IndividualContainer = React.createClass({
       // times the number of seconds
       frameCount: audioCtx.sampleRate * duration,
 
-      networkIndividualSound: null
+      networkIndividualSound: null,
+      waveformNodes: []
     }
   },
   componentWillReceiveProps: function( nextProps ) {
@@ -59,16 +60,16 @@ const IndividualContainer = React.createClass({
 */
 
       let outputsToActivate = [
-        { index: 0, frequency: 110.0 }, // wave table mix control wave
-        { index: 1, frequency: 440.0 }, // wave table audio waves:
-        { index: 2, frequency: 440.0 },
-        // { index: 3, frequency: 440.0 },
-        // { index: 4, frequency: 440.0 },
-        // { index: 5, frequency: 440.0 },
-        // { index: 6, frequency: 440.0 },
-        // { index: 7, frequency: 440.0 },
-        // { index: 8, frequency: 440.0 },
-        // { index: 9, frequency: 440.0 },
+        { index: 0, frequency: 55.0 }, // wave table mix control wave
+        { index: 1, frequency: 110.0 }, // wave table audio waves:
+        { index: 2, frequency: 220.0 },
+        { index: 3, frequency: 440.0 },
+        { index: 4, frequency: 660.0 },
+        { index: 5, frequency: 880.0 },
+        { index: 6, frequency: 1760.0 },
+        { index: 7, frequency: 3520.0 },
+        { index: 8, frequency: 7040.0 },
+        { index: 9, frequency: 14080.0 },
       ];
 
       this.activateMember( nextProps.member, outputsToActivate );
@@ -93,9 +94,10 @@ const IndividualContainer = React.createClass({
     return ( Math.random() < 0.5 ? 0 : 1 );
   },
   activateMember: function( member, outputsToActivate, reverse ) {
-    this.setState({
-      networkIndividualSound: update(this.state.networkIndividualSound, {$set: null})
-    });
+    // this.setState({
+    //   networkIndividualSound: update(this.state.networkIndividualSound, {$set: null})
+    // });
+    this.networkIndividualSound = null;
 
     const variationOnPeriods = true;
 
@@ -128,10 +130,11 @@ const IndividualContainer = React.createClass({
     // let's only activate the network once per unique input perods value / sample
     let uniqueInputPeriods = new Set( outputsToActivate.map( o =>
       memberOutputs[o.index].inputPeriods ) );
+    var networkActivationStart = performance.now();
     uniqueInputPeriods.forEach(function( inputPeriods ) {
 
       for ( let c=0; c < sampleCount; c++ ) {
-        if( c % 10000 == 0 ) console.log(`activating network for sample ${c} and input period ${inputPeriods}`);
+        // if( c % 10000 == 0 ) console.log(`activating network for sample ${c} and input period ${inputPeriods}`);
 
         let rangeFraction = c / (sampleCount-1);
 
@@ -159,6 +162,11 @@ const IndividualContainer = React.createClass({
         }.bind(this));
       }
     }.bind(this));
+    var networkActivationEnd = performance.now();
+    console.log(`Activating network,
+      for ${uniqueInputPeriods.size} unique periods
+      and ${sampleCount} samples,
+      took ${networkActivationEnd - networkActivationStart}  milliseconds.`);
 
     this.setState({
       memberOutputs: update(this.state.memberOutputs, {$merge: memberOutputs})
@@ -296,14 +304,14 @@ const IndividualContainer = React.createClass({
   },
 
   playAudioRendering: function() {
-
+    console.log(`playAudioRendering, buffer length: ${this.networkIndividualSound.length}`);
     let soundToPlay = this.state.audioCtx.createBufferSource();
-    soundToPlay.buffer = this.state.networkIndividualSound;
+    soundToPlay.buffer = this.networkIndividualSound;
     soundToPlay.connect( this.state.audioCtx.destination );
     soundToPlay.start();
 
-    this.mixGainsStart = null;
-    window.requestAnimationFrame( this.showMixGains );
+    // this.mixGainsStart = null;
+    // window.requestAnimationFrame( this.showMixGains );
   },
 
   getAudioBufferSource: function( samplesArrays, audioCtx ) {
@@ -339,7 +347,9 @@ const IndividualContainer = React.createClass({
     ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
 
-    if( Object.keys(this.state.memberOutputs).length && ! this.state.networkIndividualSound) {
+    if( Object.keys(this.state.memberOutputs).length ) {
+
+      console.log('Wiring up audio graph...');
 
       const offlineCtx = new OfflineAudioContext( 1 /*channels*/,
         this.state.audioCtx.sampleRate*this.state.duration, this.state.audioCtx.sampleRate);
@@ -390,10 +400,12 @@ const IndividualContainer = React.createClass({
 
       // gain values for each audio wave in the wave table,
       // each controlled by a value curve from the calculated gain values
+      console.log('Calculating gain values...');
       let gainValues = this.getGainValuesPerAudioWave( audioWaves.length, waveTableMixWave.samples );
       this.gainValues = gainValues; // temporary global assignment, for logging in showMixGains()
       // console.log("gainValues");console.log(gainValues);
       let audioSourceGains = [];
+      console.log('Applying gain values to each gain node...');
       gainValues.forEach( (oneGainControlArray, gainIndex) => {
         let VCA = offlineCtx.createGain();
         VCA.gain.setValueCurveAtTime(new Float32Array( oneGainControlArray.map( oneGainValue => {
@@ -401,6 +413,7 @@ const IndividualContainer = React.createClass({
         })), offlineCtx.currentTime, this.state.duration);
         audioSourceGains.push( VCA );
       });
+      console.log('Done calculating gain values.');
 
       // connect each audio source to a gain node,
       audioSources.forEach(
@@ -410,10 +423,8 @@ const IndividualContainer = React.createClass({
       let mergerNode = offlineCtx.createChannelMerger( audioSources.length );
 
       // connect the output of each audio source gain to the mixer
-      audioSourceGains.forEach( (audioGain, index) => {
-          console.log(`connecting to channel #${index} of merger node`);
-          audioGain.connect( mergerNode, 0, index )
-        });
+      audioSourceGains.forEach(
+        (audioGain, index) => audioGain.connect( mergerNode, 0, index ) );
 
       // connect the mixer to the output device
       mergerNode.connect( offlineCtx.destination );
@@ -476,24 +487,34 @@ const IndividualContainer = React.createClass({
       source.start();
 */
 
-
+      console.log('Done wiring up audio graph, will now render.');
 
       // Offline rendering of the audio graph to a reusable buffer
       offlineCtx.startRendering().then(function( renderedBuffer ) {
-        console.log('Rendering completed successfully');
+        console.log('Rendering completed successfully, will add result to component state...');
 
-        // console.log("renderedBuffer.getChannelData(0)");
-        // console.log(renderedBuffer.getChannelData(0)[renderedBuffer.length-1]);
-        this.setState({
-          networkIndividualSound: this.ensureBufferStartsAndEndsAtZero( renderedBuffer )
-        }, function() {
-          this.playAudioRendering();
-        });
+        // this.setState({
+        //   networkIndividualSound: update(
+        //     this.state.networkIndividualSound,
+        //     {$set: this.ensureBufferStartsAndEndsAtZero( renderedBuffer )})
+        // }, function() {
+        //   console.log('State set with single rendered buffer, will now play.');
+        //   this.playAudioRendering();
+        // });
+        this.networkIndividualSound = this.ensureBufferStartsAndEndsAtZero( renderedBuffer );
+        console.log('Rendered buffer set to global variable, will now play.');
+        this.playAudioRendering();
+        // this.setState({
+        //   networkIndividualSound: true
+        // }, function() {
+        //   this.playAudioRendering();
+        // });
+
       }.bind(this)).catch(function( err ) {
         console.log('Rendering failed: ' + err);
       });
-    }
 
+    }
 
     ///// waveform visualization
 
@@ -531,17 +552,24 @@ const IndividualContainer = React.createClass({
       );
     }.bind(this));
 
+
     return(
       <div className="waveform-visualization">
-        {waveformNodes.length ? waveformNodes : <em>Rendering waveform visualization</em>}
         {
-          this.state.networkIndividualSound ?
-          <button onClick={this.playAudioRendering}>Play</button>
-          : <em>waiting for rendering</em>
+          waveformNodes && waveformNodes.length ?
+          [
+            ...waveformNodes,
+            <button onClick={this.playAudioRendering} key="play">Play</button>
+          ]
+          : <em>Rendering waveform visualization</em>
         }
       </div>
     );
   }
 });
-
+// {
+//   this.state.networkIndividualSound ?
+//   <button onClick={this.playAudioRendering}>Play</button>
+//   : <em>waiting for rendering</em>
+// }
 export default IndividualContainer;
