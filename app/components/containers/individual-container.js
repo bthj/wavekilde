@@ -4,11 +4,13 @@ import IndividualGrid from '../views/individual-grid';
 
 import { Waveform, LineChart } from 'react-d3-components';
 
+import Parallel from 'paralleljs';
+
 
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 60;  // in seconds
+    const duration = 1;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -26,8 +28,6 @@ const IndividualContainer = React.createClass({
   componentWillReceiveProps: function( nextProps ) {
 
     if( nextProps.member ) {
-      const inputPeriods = this.state.frameCount / (this.state.frameCount/20);
-      // const inputPeriods = this.state.frameCount / 66;
 
 /*    rather dub-steppy settings:
 
@@ -72,15 +72,31 @@ const IndividualContainer = React.createClass({
         { index: 9, frequency: 14080.0 },
       ];
 
-      this.activateMember( nextProps.member, outputsToActivate );
+
+      var p = new Parallel([1, 2, 3, 4, 5]);
+      // p.spawn(function (data) {
+      // 	return data.map(function (number) {
+      // 		return number * number;
+      // 	});
+      // }).then(function (data) {
+      // 	console.log(data);
+      // });
+      p.map(function (number) {
+        return number * number;
+      }).then( (data) => {
+        console.log(data);
+        this.activateMember( nextProps.member, outputsToActivate );
+      });
+
+      // this.activateMember( nextProps.member, outputsToActivate );
       // this.activateMember( nextProps.member, null );
     }
   },
 
   componentDidMount: function() {
 
-    console.log('document.getElementsByClassName("population-footer")[0]');
-    console.log(document.getElementsByClassName("population-footer")[0]);
+    // console.log('document.getElementsByClassName("population-footer")[0]');
+    // console.log(document.getElementsByClassName("population-footer")[0]);
   },
 
 
@@ -132,6 +148,41 @@ const IndividualContainer = React.createClass({
       memberOutputs[o.index].inputPeriods ) );
     var networkActivationStart = performance.now();
     uniqueInputPeriods.forEach(function( inputPeriods ) {
+
+
+
+      let inputSignals = Array(sampleCount).fill(0).map((v,c) => {
+        let rangeFraction = c / (sampleCount-1);
+        let mainInputSignal = this.lerp( -1, 1, rangeFraction );
+        if( variationOnPeriods ) {
+          var extraInput = Math.sin( inputPeriods * mainInputSignal );
+        } else {
+          var extraInput = Math.sin( inputPeriods * Math.abs(mainInputSignal) );
+        }
+        return [extraInput, mainInputSignal];
+      });
+      // console.log("inputSignals.length");console.log(inputSignals.length);
+      // console.log("inputSignals[inputSignals.length/2]");console.log(inputSignals[inputSignals.length/2]);
+
+      var p = new Parallel(inputSignals, {
+        env: {
+          cppn: memberCPPN
+        }
+      });
+      p.map(function (inputSignalSet) {
+        global.env.cppn.clearSignals();
+        global.env.cppn.setInputSignals( inputSignalSet );
+        global.env.cppn.recursiveActivation();
+        let outputSet = [...Array(global.env.cppn.outputNeuronCount).keys()].map( function(outputIndex) {
+          this.global.env.cppn.getOutputSignal( outputIndex );
+        }.bind(this));
+        return outputSet;
+      }).then( (data) => {
+        console.log( `network activations for input signals ${inputSignalSet}` );
+        console.log(data);
+      });
+
+
 
       for ( let c=0; c < sampleCount; c++ ) {
         // if( c % 10000 == 0 ) console.log(`activating network for sample ${c} and input period ${inputPeriods}`);
@@ -493,22 +544,9 @@ const IndividualContainer = React.createClass({
       offlineCtx.startRendering().then(function( renderedBuffer ) {
         console.log('Rendering completed successfully, will add result to component state...');
 
-        // this.setState({
-        //   networkIndividualSound: update(
-        //     this.state.networkIndividualSound,
-        //     {$set: this.ensureBufferStartsAndEndsAtZero( renderedBuffer )})
-        // }, function() {
-        //   console.log('State set with single rendered buffer, will now play.');
-        //   this.playAudioRendering();
-        // });
         this.networkIndividualSound = this.ensureBufferStartsAndEndsAtZero( renderedBuffer );
         console.log('Rendered buffer set to global variable, will now play.');
         this.playAudioRendering();
-        // this.setState({
-        //   networkIndividualSound: true
-        // }, function() {
-        //   this.playAudioRendering();
-        // });
 
       }.bind(this)).catch(function( err ) {
         console.log('Rendering failed: ' + err);
@@ -567,9 +605,5 @@ const IndividualContainer = React.createClass({
     );
   }
 });
-// {
-//   this.state.networkIndividualSound ?
-//   <button onClick={this.playAudioRendering}>Play</button>
-//   : <em>waiting for rendering</em>
-// }
+
 export default IndividualContainer;
