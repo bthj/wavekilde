@@ -4,13 +4,11 @@ import IndividualGrid from '../views/individual-grid';
 
 import { Waveform, LineChart } from 'react-d3-components';
 
-import Parallel from 'paralleljs';
-
 
 const IndividualContainer = React.createClass({
 
   getInitialState: function() {
-    const duration = 1;  // in seconds
+    const duration = 10;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
@@ -30,7 +28,6 @@ const IndividualContainer = React.createClass({
     if( nextProps.member ) {
 
 /*    rather dub-steppy settings:
-
       let outputsToActivate = [
         {
           index: 0,
@@ -72,23 +69,7 @@ const IndividualContainer = React.createClass({
         { index: 9, frequency: 14080.0 },
       ];
 
-
-      var p = new Parallel([1, 2, 3, 4, 5]);
-      // p.spawn(function (data) {
-      // 	return data.map(function (number) {
-      // 		return number * number;
-      // 	});
-      // }).then(function (data) {
-      // 	console.log(data);
-      // });
-      p.map(function (number) {
-        return number * number;
-      }).then( (data) => {
-        console.log(data);
-        this.activateMember( nextProps.member, outputsToActivate );
-      });
-
-      // this.activateMember( nextProps.member, outputsToActivate );
+      this.activateMember( nextProps.member, outputsToActivate );
       // this.activateMember( nextProps.member, null );
     }
   },
@@ -110,9 +91,7 @@ const IndividualContainer = React.createClass({
     return ( Math.random() < 0.5 ? 0 : 1 );
   },
   activateMember: function( member, outputsToActivate, reverse ) {
-    // this.setState({
-    //   networkIndividualSound: update(this.state.networkIndividualSound, {$set: null})
-    // });
+
     this.networkIndividualSound = null;
 
     const variationOnPeriods = true;
@@ -150,37 +129,20 @@ const IndividualContainer = React.createClass({
     uniqueInputPeriods.forEach(function( inputPeriods ) {
 
 
-
-      let inputSignals = Array(sampleCount).fill(0).map((v,c) => {
-        let rangeFraction = c / (sampleCount-1);
-        let mainInputSignal = this.lerp( -1, 1, rangeFraction );
-        if( variationOnPeriods ) {
-          var extraInput = Math.sin( inputPeriods * mainInputSignal );
-        } else {
-          var extraInput = Math.sin( inputPeriods * Math.abs(mainInputSignal) );
-        }
-        return [extraInput, mainInputSignal];
-      });
+      // TODO: do something like this in a separate function, to get the input signals generally..
+      // let inputSignals = Array(sampleCount).fill(0).map((v,c) => {
+      //   let rangeFraction = c / (sampleCount-1);
+      //   let mainInputSignal = this.lerp( -1, 1, rangeFraction );
+      //   if( variationOnPeriods ) {
+      //     var extraInput = Math.sin( inputPeriods * mainInputSignal );
+      //   } else {
+      //     var extraInput = Math.sin( inputPeriods * Math.abs(mainInputSignal) );
+      //   }
+      //   return [extraInput, mainInputSignal];
+      // });
       // console.log("inputSignals.length");console.log(inputSignals.length);
       // console.log("inputSignals[inputSignals.length/2]");console.log(inputSignals[inputSignals.length/2]);
 
-      var p = new Parallel(inputSignals, {
-        env: {
-          cppn: memberCPPN
-        }
-      });
-      p.map(function (inputSignalSet) {
-        global.env.cppn.clearSignals();
-        global.env.cppn.setInputSignals( inputSignalSet );
-        global.env.cppn.recursiveActivation();
-        let outputSet = [...Array(global.env.cppn.outputNeuronCount).keys()].map( function(outputIndex) {
-          this.global.env.cppn.getOutputSignal( outputIndex );
-        }.bind(this));
-        return outputSet;
-      }).then( (data) => {
-        console.log( `network activations for input signals ${inputSignalSet}` );
-        console.log(data);
-      });
 
 
 
