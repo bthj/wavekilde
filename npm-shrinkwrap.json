@@ -2,16 +2,20 @@
   "name": "wavekilde",
   "version": "1.0.0",
   "dependencies": {
+    "cppnjs": {
+      "version": "0.2.7",
+      "from": "cppnjs@0.2.7",
+      "resolved": "https://registry.npmjs.org/cppnjs/-/cppnjs-0.2.7.tgz"
+    },
     "neatjs": {
       "version": "0.3.1",
       "from": "neatjs@0.3.1",
-      "dependencies": {
-        "win-utils": {
-          "version": "0.1.2",
-          "from": "win-utils@0.1.1",
-          "resolved": "git+https://github.com/bthj/win-utils.git"
-        }
-      }
+      "resolved": "https://registry.npmjs.org/neatjs/-/neatjs-0.3.1.tgz"
+    },
+    "win-utils": {
+      "version": "0.1.2",
+      "from": "git+https://github.com/bthj/win-utils.git",
+      "resolved": "git+https://github.com/bthj/win-utils.git#4143ec25e2df7b425d84808a0eaa1d9c4ab376b4"
     }
   }
 }
