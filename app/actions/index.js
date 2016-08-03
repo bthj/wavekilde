@@ -1,21 +1,18 @@
 import {
-  POPULATION_INITIALIZE,
+  POPULATION_SET_CURRENT,
   POPULATION_EVOLVE
 } from './types';
 
-export function initializePopulation() {
-  const population = []; // TODO: call helper to initialize population
+export function setCurrentPopulation( populationIndex ) {
   return {
-    type: POPULATION_INITIALIZE,
-    payload: population
+    type: POPULATION_SET_CURRENT,
+    populationIndex
   };
 }
 
-// TODO: parents as parameters?
-export function evolvePopulation( parents ) {
-  const population = []; // TODO: call helper to eveolve population
+export function evolveCurrentPopulation( parentIdexes ) {
   return {
     type: POPULATION_EVOLVE,
-    payload: population
+    parentIdexes
   };
 }

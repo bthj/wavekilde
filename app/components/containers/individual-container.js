@@ -7,6 +7,10 @@ import { Waveform, LineChart } from 'react-d3-components';
 
 const IndividualContainer = React.createClass({
 
+  // TODO: move (most / all) state variables to application redux state
+  // one .memberOutputs object per member of current population, lazily
+  // set on demand; possibly when played in overview of population,
+  // and when viewing detail for one individual...
   getInitialState: function() {
     const duration = 10;  // in seconds
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
