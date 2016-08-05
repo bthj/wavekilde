@@ -2,7 +2,7 @@ import {
   POPULATION_SET_CURRENT,
   POPULATION_EVOLVE
 } from '../actions/types';
-import Evolver from '../evolution/cppn-neat';
+import Evolver from '../cppn-neat/network-evolution';
 
 const INITIAL_STATE = {
   populations: [],
@@ -42,19 +42,6 @@ function getPopulationsCoveringIndex( index, populations ) {
   }
   return nextPopulations;
 }
-// function setPopulation( index, populations ) {
-//   let population;
-//   if( populations[index] ) {
-//     population = populations[index];
-//   } else {
-//     if( 0 === index ) {
-//       population = Evolver.createFirstPopulation();
-//     } else { // evolution without parents
-//       population = Evolver.evolveNextGeneration( [] );
-//     }
-//   }
-//   return population;
-// }
 
 function evolveNewPopulation( parentIndexes, population ) {
   const parents = [];

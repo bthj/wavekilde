@@ -16,7 +16,7 @@ const IndividualContainer = React.createClass({
     const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
     return {
       memberOutputs: {},
-      memberSettings: [],
+      // memberSettings: [],
       audioCtx: audioCtx,
       duration: duration,
       // Create an empty two-second buffer at the sample rate of the AudioContext,
@@ -24,7 +24,7 @@ const IndividualContainer = React.createClass({
       frameCount: audioCtx.sampleRate * duration,
 
       networkIndividualSound: null,
-      waveformNodes: []
+      // waveformNodes: []
     }
   },
   componentWillReceiveProps: function( nextProps ) {
@@ -126,7 +126,7 @@ const IndividualContainer = React.createClass({
       };
     }.bind(this));
 
-    // let's only activate the network once per unique input perods value / sample
+    // let's only activate the network once per unique input periods value / sample
     let uniqueInputPeriods = new Set( outputsToActivate.map( o =>
       memberOutputs[o.index].inputPeriods ) );
     var networkActivationStart = performance.now();

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { setCurrentPopulation } from '../../actions/index';
+import { setCurrentPopulation } from '../../actions/evolution';
 
 import PopulationGrid from '../views/population-grid';
 import IndividualContainer from './individual-container';
