@@ -11,5 +11,15 @@ class Renderer {
 
   renderNetworksOutputSamplesAsAudioBuffer( memberOutputs, patch ) {
 
+    return new Promise( (resolve, reject) = {
+
+      let audioBuffer;
+      /* ... */
+      if( true /*TODO: audio buffer successfully rendered */ ) {
+        resolve( audioBuffer );
+      } else {
+        reject( "Not able to render audio buffer from member outputs with provided audio graph patch" );
+      }
+    });
   }
 }

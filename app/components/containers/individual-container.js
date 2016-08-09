@@ -1,4 +1,6 @@
 import React from 'react';
+import { connect } from 'react-redux';
+import { getAudioBuffersFromMember } from '../../actions/rendering';
 import update from 'react-addons-update';
 import IndividualGrid from '../views/individual-grid';
 
@@ -360,6 +362,8 @@ const IndividualContainer = React.createClass({
   },
 
   render: function() {
+    console.log("this.props.getAudioBuffersFromMember: ", this.props.getAudioBuffersFromMember);
+    this.props.getAudioBuffersFromMember();
 
     ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
@@ -572,4 +576,4 @@ const IndividualContainer = React.createClass({
   }
 });
 
-export default IndividualContainer;
+export default connect(null, {getAudioBuffersFromMember})(IndividualContainer);

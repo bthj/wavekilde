@@ -1,3 +1,10 @@
+import {
+  REQUEST_OUTPUTS_FOR_MEMBER,
+  RECEIVE_OUTPUTS_FOR_MEMBER,
+  REQUEST_AUDIO_BUFFER_FOR_MEMBER,
+  RECEIVE_AUDIO_BUFFER_FOR_MEMBER
+} from '../actions/types';
+
 const duration = 10;  // in seconds
 const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
 
@@ -17,11 +24,15 @@ const INITIAL_STATE = {
 
 export default function( state = INITIAL_STATE, action ) {
   switch( action.type ) {
-    case ADD_OUTPUTS_FOR_MEMBER:
-
-      break;
-    case ADD_AUDIO_BUFFER_FOR_MEMBER:
+    case REQUEST_OUTPUTS_FOR_MEMBER:
+      return state;
+    case RECEIVE_OUTPUTS_FOR_MEMBER:
+      return state;
+    case REQUEST_AUDIO_BUFFER_FOR_MEMBER:
+      return state;
+    case RECEIVE_AUDIO_BUFFER_FOR_MEMBER:
+      return state;
     default:
-
+      return state;
   }
 }

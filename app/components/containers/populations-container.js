@@ -6,9 +6,6 @@ import PopulationGrid from '../views/population-grid';
 import IndividualContainer from './individual-container';
 
 
-// import neatjs from 'neatjs';
-// import cppnjs from 'cppnjs';
-
 class PopulationsContainer extends Component{
 
   componentDidMount() {

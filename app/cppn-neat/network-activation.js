@@ -8,14 +8,17 @@ class Activator {
     this.sampleRate = sampleRate;
   }
 
-  activateMember( member, outputsToActivate, reverse, variationOnPeriods = true ) {
+  activateMember( member, patch, reverse = false, variationOnPeriods = true ) {
 
     return new Promise( (resolve, reject) => {
 
       const memberCPPN = member.offspring.networkDecode();
       const memberOutputs = {};
 
-      if( ! outputsToActivate || ! outputsToActivate.length ) {
+      let outputsToActivate;
+      if( patch ) {
+        outputsToActivate = getOutputsToActivateFromPatch( patch );
+      } else {
         outputsToActivate = Array.apply(null, Array(memberCPPN.outputNeuronCount))
             .map(function(x,i){
               return {
@@ -112,6 +115,12 @@ class Activator {
 
   halfChance() {
     return ( Math.random() < 0.5 ? 0 : 1 );
+  }
+
+  getOutputsToActivateFromPatch( patch ) {
+    const outputsToActivate = [];
+    // TODO: deduce what outputs to activate from patch definition
+    return outputsToActivate;
   }
 }
 
