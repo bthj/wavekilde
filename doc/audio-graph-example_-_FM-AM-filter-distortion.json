@@ -1,0 +1,41 @@
+[
+  {
+    "comment": "audio wave - A4",
+    "networkOutput": 0,
+    "frequency": 440.0,
+    "type": "audio"
+  },
+  {
+    "comment": "audio wave - A4",
+    "networkOutput": 1,
+    "frequency": 440.0,
+    "type": "audio"
+  },
+  {
+    "comment": "LFO for FM",
+    "networkOutput": 3,
+    "frequency": 880.0,
+    "type": "detune-value",
+    "range": [-1000, 1000]
+  }
+  {
+    "comment": "LFO for distortion",
+    "networkOutput": 5,
+    "frequency": 14.0,
+    "type": "distortion-curve"
+  },
+  {
+    "comment": "LFO for filter frequency",
+    "networkOutput": 4,
+    "frequency": 14.0,
+    "type": "filter-frequency",
+    "range": [0, 2000]
+  },
+  {
+    "comment": "LFO for AM",
+    "networkOutput": 2,
+    "frequency": 0,
+    "type": "gain-value",
+    "range": [0, 1]
+  }
+]
