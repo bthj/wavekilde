@@ -18,9 +18,9 @@ import Renderer from '../cppn-neat/network-rendering';
  *                                  base note, with integers indicating the number
  *                                  of notes departing from the base note, such as:
  *                                  [-4, -1, 2, 8]
- * @param  {boolean} reverse         Wether the samples output from the network
+ * @param  {boolean} reverse        Whether the samples output from the network
  *                                  should be reversed.
- * @return {Array}                 Audio buffer(s).
+ * @return {Array}                  Audio buffer(s).
  */
 export function getAudioBuffersFromMember(
     populationIndex, memberIndex, noteDeltas, reverse ) {
@@ -69,6 +69,14 @@ function receiveOutputsForMember( memberOutputs, populationIndex, memberIndex ) 
   return {
     type: RECEIVE_OUTPUTS_FOR_MEMBER,
     memberOutputs,
+    populationIndex,
+    memberIndex
+  };
+}
+
+function requestAudioBufferForMember( populationIndex, memberIndex ) {
+  return {
+    type REQUEST_AUDIO_BUFFER_FOR_MEMBER,
     populationIndex,
     memberIndex
   };

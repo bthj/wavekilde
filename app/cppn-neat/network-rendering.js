@@ -13,6 +13,10 @@ class Renderer {
 
     return new Promise( (resolve, reject) = {
 
+      // TODO: move in hardcoded rendering from IndividualContainer
+
+      // TODO: ...then, dynamic rendering pipeline according to patch
+
       let audioBuffer;
       /* ... */
       if( true /*TODO: audio buffer successfully rendered */ ) {
