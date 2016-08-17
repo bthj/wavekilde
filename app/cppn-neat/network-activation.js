@@ -19,6 +19,7 @@ class Activator {
       if( patch ) {
         outputsToActivate = getOutputsToActivateFromPatch( patch );
       } else {
+        // activate all outputs, each with random frequency:
         outputsToActivate = Array.apply(null, Array(memberCPPN.outputNeuronCount))
             .map(function(x,i){
               return {
@@ -118,9 +119,12 @@ class Activator {
   }
 
   getOutputsToActivateFromPatch( patch ) {
-    const outputsToActivate = [];
-    // TODO: deduce what outputs to activate from patch definition
-    return outputsToActivate;
+    return patch.map( onePatchNode => {
+      return {
+        index: onePatchNode.networkOutput,
+        frequency: onePatchNode.frequency
+      };
+    });
   }
 }
 

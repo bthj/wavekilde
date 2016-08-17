@@ -33,7 +33,7 @@ export function getAudioBuffersFromMember(
       getState().patching.currentPatchKey );
 
     const activator = new Activator( frameCount, sampleRate );
-    const renderer = new Renderer( frameCount, duration );
+    const renderer = new Renderer( frameCount, sampleRate, duration );
 
     dispatch( requestMemberOutputsFromActivator(populationIndex, memberIndex) );
 
@@ -42,6 +42,7 @@ export function getAudioBuffersFromMember(
     // outputsToActivate (deduced from synth-patch) from application state.
     // Return a promise to wait for activation of network outputs
     return activator.activateMember(member, currentPatch).then( memberOutputs => {
+
       // update app state with results of network activation
       dispatch( receiveOutputsForMember( memberOutputs, populationIndex, memberIndex) );
 
