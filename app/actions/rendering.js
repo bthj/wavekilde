@@ -77,7 +77,7 @@ function receiveOutputsForMember( memberOutputs, populationIndex, memberIndex ) 
 
 function requestAudioBufferForMember( populationIndex, memberIndex ) {
   return {
-    type REQUEST_AUDIO_BUFFER_FOR_MEMBER,
+    type: REQUEST_AUDIO_BUFFER_FOR_MEMBER,
     populationIndex,
     memberIndex
   };

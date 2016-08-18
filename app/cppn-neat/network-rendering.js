@@ -14,7 +14,7 @@ class Renderer {
 
   renderNetworksOutputSamplesAsAudioBuffer( memberOutputs, patch ) {
 
-    return new Promise( (resolve, reject) = {
+    return new Promise( (resolve, reject) => {
 
       // TODO: move in hardcoded rendering from IndividualContainer
 

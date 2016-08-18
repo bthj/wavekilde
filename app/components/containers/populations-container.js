@@ -15,11 +15,18 @@ class PopulationsContainer extends Component{
 
   render() {
     console.log( "this.props.populations", this.props.populations );
-    let individual = this.props.populations[0] ?
-      this.props.populations[0][5] : null;
+    // let individual = this.props.populations[0] ?
+    //   this.props.populations[0][5] : null;
+
+    // TODO: provide populationIndex and memberIndex from selection in UI,
+    // or navigate to /individual with parameters?
 
     return(
-      <IndividualContainer member={individual} />
+      <IndividualContainer
+//        member={individual}
+        populationIndex={0}
+        memberIndex={5}
+      />
     );
   }
 }
