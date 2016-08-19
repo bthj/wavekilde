@@ -1,6 +1,7 @@
 import {
   POPULATION_SET_CURRENT,
-  POPULATION_EVOLVE
+  POPULATION_EVOLVE,
+  MEMBER_SET_CURRENT
 } from './types';
 
 export function setCurrentPopulation( populationIndex ) {
@@ -15,4 +16,11 @@ export function evolveCurrentPopulation( parentIdexes ) {
     type: POPULATION_EVOLVE,
     parentIdexes
   };
+}
+
+export function setCurrentMember( memberIndex ) {
+  return {
+    type: MEMBER_SET_CURRENT,
+    memberIndex
+  }
 }

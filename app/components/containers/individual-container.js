@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { getAudioBuffersFromMember } from '../../actions/rendering';
 import update from 'react-addons-update';
@@ -7,29 +7,76 @@ import IndividualGrid from '../views/individual-grid';
 import { Waveform, LineChart } from 'react-d3-components';
 
 
-const IndividualContainer = React.createClass({
+class IndividualContainer extends Component {
+
+  static contextTypes = {
+    router: PropTypes.object
+  };
 
   // TODO: move (most / all) state variables to application redux state
   // one .memberOutputs object per member of current population, lazily
   // set on demand; possibly when played in overview of population,
   // and when viewing detail for one individual...
-  getInitialState: function() {
-    const duration = 10;  // in seconds
-    const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
-    return {
-      memberOutputs: {},
-      // memberSettings: [],
-      audioCtx: audioCtx,
-      duration: duration,
-      // Create an empty two-second buffer at the sample rate of the AudioContext,
-      // times the number of seconds
-      frameCount: audioCtx.sampleRate * duration,
+  // getInitialState: function() {
+    // const duration = 10;  // in seconds
+    // const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
+    // return {
+    //   memberOutputs: {},
+    //   // memberSettings: [],
+    //   audioCtx: audioCtx,
+    //   duration: duration,
+    //   // Create an empty two-second buffer at the sample rate of the AudioContext,
+    //   // times the number of seconds
+    //   frameCount: audioCtx.sampleRate * duration,
+    //
+    //   networkIndividualSound: null,
+    //   // waveformNodes: []
+    // }
+  // },
 
-      networkIndividualSound: null,
-      // waveformNodes: []
+  constructor( props ) {
+    super( props );
+
+    this.state = { soundBufferPlayedAutomatically: false };
+  }
+
+
+  getMemberOutputsFromApplicationState() {
+    return this.props.rendering.memberOutputs.getIn(
+      [this.props.populationIndex, this.props.memberIndex] );
+  }
+
+  getRenderedSoundBuffersFromApplicationState() {
+    return this.props.rendering.memberRenderedSounds.getIn(
+        [this.props.populationIndex, this.props.memberIndex] );
+  }
+
+  isMemberOutputAvailable() {
+    return getMemberOutputsFromApplicationState() ? true : false;
+  }
+
+  isAudioBufferAvailable() {
+    return getRenderedSoundBuffersFromApplicationState() ? true : fale;
+  }
+
+  isMemberSelectedFromPopulation() {
+    return this.props.populationIndex >= 0 && this.props.memberIndex >= 0;
+  }
+
+  componentWillReceiveProps( nextProps ) {
+
+    if( isMemberOutputAvailable() ) {
+      // TODO: message that network activation has completed
+      // TODO: set up waveform visualization for the available network outputs.
+    } else if( isAudioBufferAvailable() ) {
+      // TODO: message that audio rendering has completed
+
+      if( ! this.state.soundBufferPlayedAutomatically ) {
+        // will play if buffer is available and then set
+        // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
+        this.playAudioRendering();
+      }
     }
-  },
-  componentWillReceiveProps: function( nextProps ) {
 
     if( nextProps.member ) {
 
@@ -62,29 +109,51 @@ const IndividualContainer = React.createClass({
       ];
 */
 
-      let outputsToActivate = [
-        { index: 0, frequency: 55.0 }, // wave table mix control wave
-        { index: 1, frequency: 110.0 }, // wave table audio waves:
-        { index: 2, frequency: 220.0 },
-        { index: 3, frequency: 440.0 },
-        { index: 4, frequency: 660.0 },
-        { index: 5, frequency: 880.0 },
-        { index: 6, frequency: 1760.0 },
-        { index: 7, frequency: 3520.0 },
-        { index: 8, frequency: 7040.0 },
-        { index: 9, frequency: 14080.0 },
-      ];
+      // let outputsToActivate = [
+      //   { index: 0, frequency: 55.0 }, // wave table mix control wave
+      //   { index: 1, frequency: 110.0 }, // wave table audio waves:
+      //   { index: 2, frequency: 220.0 },
+      //   { index: 3, frequency: 440.0 },
+      //   { index: 4, frequency: 660.0 },
+      //   { index: 5, frequency: 880.0 },
+      //   { index: 6, frequency: 1760.0 },
+      //   { index: 7, frequency: 3520.0 },
+      //   { index: 8, frequency: 7040.0 },
+      //   { index: 9, frequency: 14080.0 },
+      // ];
+      //
+      // this.activateMember( nextProps.member, outputsToActivate );
 
-      this.activateMember( nextProps.member, outputsToActivate );
+
       // this.activateMember( nextProps.member, null );
     }
-  },
+  }
 
-  componentDidMount: function() {
+  componentDidMount() {
 
     // console.log('document.getElementsByClassName("population-footer")[0]');
     // console.log(document.getElementsByClassName("population-footer")[0]);
-  },
+
+    if( isMemberSelectedFromPopulation() ) {
+
+      // TODO: check if properties are already available in componentWillMount()
+      if( ! this.getRenderedSoundBuffersFromApplicationState() ) {
+        // rendered audio buffers not available in application state,
+        // for the individual indexed to via props to this component,
+        // so we'll trigger network activation and rendering:
+        this.props.getAudioBuffersFromMember(
+          this.props.populationIndex, this.props.memberIndex
+          /*, noteDeltas, reverse */
+        );
+
+        // TODO: message that rendering process has started.
+      }
+
+    } else {
+      this.context.router.push( '/populations' );
+    }
+  }
+
 
 
   // lerp: function( from, to, fraction ) {
@@ -196,7 +265,7 @@ const IndividualContainer = React.createClass({
   // remapNumberToRange: function( inputNumber, fromMin, fromMax, toMin, toMax ) {
   //   return (inputNumber - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
   // },
-  getDownsampledArray: function( originalValues, targetSampleCount ) {
+  getDownsampledArray( originalValues, targetSampleCount ) {
 
     const samplesInSection = Math.floor( originalValues.length / targetSampleCount );
 
@@ -211,7 +280,7 @@ const IndividualContainer = React.createClass({
       }
     });
     return downsampled;
-  },
+  }
 
   // getSpectrumSpansForAudioWaves: function( audioWaveCount, oneWaveFraction, oneWaveMiddleFraction ) {
   //   const waveSpectrumSpans = new Map();
@@ -256,7 +325,7 @@ const IndividualContainer = React.createClass({
   //   return gainValues;
   // },
 
-  getDownsampledMemberOutputs: function( targetSampleCount ) {
+  getDownsampledMemberOutputs( targetSampleCount ) {
     let downsampledMemberOutputs = {};
     for( let outputIndex in this.state.memberOutputs ) {
       downsampledMemberOutputs[outputIndex] = {
@@ -266,8 +335,8 @@ const IndividualContainer = React.createClass({
       };
     }
     return downsampledMemberOutputs;
-  },
-  getWaveformVisualizationDataFromOutputs: function( memberOutputs ) {
+  }
+  getWaveformVisualizationDataFromOutputs( memberOutputs ) {
     let visualizationDataForAllNetworkOutputNodes = [];
     for( let outputIndex in memberOutputs ) {
       visualizationDataForAllNetworkOutputNodes.push({
@@ -282,7 +351,7 @@ const IndividualContainer = React.createClass({
       });
     }
     return visualizationDataForAllNetworkOutputNodes;
-  },
+  }
   // isAudible: function( frequency ) {
   //   return 20 <= frequency && frequency <=20000;
   // },
@@ -307,7 +376,7 @@ const IndividualContainer = React.createClass({
   // },
 
 
-  showMixGains: function( timestamp ) {
+  showMixGains( timestamp ) {
       if( !this.mixGainsStart ) this.mixGainsStart = timestamp;
       let playbackProgressInSeconds = (timestamp - this.mixGainsStart)/1000;
       let timePercentage = playbackProgressInSeconds / this.state.duration;
@@ -320,18 +389,22 @@ const IndividualContainer = React.createClass({
       if( playbackProgressInSeconds < this.state.duration ) {
         window.requestAnimationFrame( this.showMixGains );
       }
-  },
+  }
 
-  playAudioRendering: function() {
-    console.log(`playAudioRendering, buffer length: ${this.networkIndividualSound.length}`);
-    let soundToPlay = this.state.audioCtx.createBufferSource();
-    soundToPlay.buffer = this.networkIndividualSound;
-    soundToPlay.connect( this.state.audioCtx.destination );
-    soundToPlay.start();
+  playAudioRendering() {
+    const individualSoundBuffers = getRenderedSoundBuffersFromApplicationState();
+    if( individualSoundBuffers ) {
+      console.log(`playAudioRendering, buffer length: ${this.networkIndividualSound.length}`);
+      const soundToPlay = this.props.rendering.audioCtx.createBufferSource();
+      soundToPlay.buffer = individualSoundBuffers;
+      soundToPlay.connect( this.props.rendering.audioCtx.destination );
+      soundToPlay.start();
 
+      this.setState({ soundBufferPlayedAutomatically: true });
+    }
     // this.mixGainsStart = null;
     // window.requestAnimationFrame( this.showMixGains );
-  },
+  }
 
   // getAudioBufferSource: function( samplesArrays, audioCtx ) {
   //
@@ -361,7 +434,7 @@ const IndividualContainer = React.createClass({
   //   return audioBufferSourceNode;
   // },
 
-  render: function() {
+  render() {
     console.log("this.props.getAudioBuffersFromMember: ", this.props.getAudioBuffersFromMember);
     this.props.getAudioBuffersFromMember();
 
@@ -576,6 +649,14 @@ const IndividualContainer = React.createClass({
       </div>
     );
   }
-});
+}
+
+function mapStateToProps( state ) {
+  return {
+    rendering: state.rendering,
+    populationIndex: state.evolution.currentPopulationIndex,
+    memberIndex: state.evolution.currentMemberIndex
+  };
+}
 
 export default connect(null, {getAudioBuffersFromMember})(IndividualContainer);

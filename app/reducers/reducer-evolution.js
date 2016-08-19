@@ -1,13 +1,14 @@
 import {
   POPULATION_SET_CURRENT,
-  POPULATION_EVOLVE
+  POPULATION_EVOLVE,
+  MEMBER_SET_CURRENT
 } from '../actions/types';
 import Evolver from '../cppn-neat/network-evolution';
 
 const INITIAL_STATE = {
   populations: [],
-  currentPopulationIndex: 0,
-  currentIndividual: null
+  currentPopulationIndex: -1,
+  currentMemberIndex: -1
 };
 
 const evolver = new Evolver();
@@ -69,6 +70,10 @@ export default function( state = INITIAL_STATE, action ) {
             state.populations[state.currentPopulationIndex]
           )
         ]
+      };
+    case MEMBER_SET_CURRENT:
+      return {...state,
+        currentMemberIndex: action.memberIndex
       };
     default:
       return state;
