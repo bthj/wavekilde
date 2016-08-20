@@ -17,7 +17,7 @@ class Activator {
 
       let outputsToActivate;
       if( patch ) {
-        outputsToActivate = getOutputsToActivateFromPatch( patch );
+        outputsToActivate = this.getOutputsToActivateFromPatch( patch );
       } else {
         // activate all outputs, each with random frequency:
         outputsToActivate = Array.apply(null, Array(memberCPPN.outputNeuronCount))

@@ -1,7 +1,9 @@
 import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { getAudioBuffersFromMember } from '../../actions/rendering';
-import update from 'react-addons-update';
+import { isAudible, remapNumberToRange } from '../../util/range';
+
+// import update from 'react-addons-update';
 import IndividualGrid from '../views/individual-grid';
 
 import { Waveform, LineChart } from 'react-d3-components';
@@ -52,11 +54,11 @@ class IndividualContainer extends Component {
   }
 
   isMemberOutputAvailable() {
-    return getMemberOutputsFromApplicationState() ? true : false;
+    return this.getMemberOutputsFromApplicationState() ? true : false;
   }
 
   isAudioBufferAvailable() {
-    return getRenderedSoundBuffersFromApplicationState() ? true : fale;
+    return this.getRenderedSoundBuffersFromApplicationState() ? true : false;
   }
 
   isMemberSelectedFromPopulation() {
@@ -65,17 +67,21 @@ class IndividualContainer extends Component {
 
   componentWillReceiveProps( nextProps ) {
 
-    if( isMemberOutputAvailable() ) {
+    if( this.isMemberOutputAvailable() ) {
+      console.log("this.isMemberOutputAvailable(): ", this.isMemberOutputAvailable());
       // TODO: message that network activation has completed
       // TODO: set up waveform visualization for the available network outputs.
-    } else if( isAudioBufferAvailable() ) {
+    }
+    if( this.isAudioBufferAvailable() ) {
+      console.log("this.isAudioBufferAvailable(): ", this.isAudioBufferAvailable());
       // TODO: message that audio rendering has completed
+      // TODO: ! we never reach here
 
-      if( ! this.state.soundBufferPlayedAutomatically ) {
-        // will play if buffer is available and then set
-        // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
-        this.playAudioRendering();
-      }
+      // if( ! this.state.soundBufferPlayedAutomatically ) {
+      //   // will play if buffer is available and then set
+      //   // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
+      //   this.playAudioRendering( 0 );
+      // }
     }
 
     if( nextProps.member ) {
@@ -129,24 +135,25 @@ class IndividualContainer extends Component {
     }
   }
 
-  componentDidMount() {
+  componentWillMount() {
 
-    // console.log('document.getElementsByClassName("population-footer")[0]');
-    // console.log(document.getElementsByClassName("population-footer")[0]);
+    if( this.isMemberSelectedFromPopulation() ) {
 
-    if( isMemberSelectedFromPopulation() ) {
-
-      // TODO: check if properties are already available in componentWillMount()
       if( ! this.getRenderedSoundBuffersFromApplicationState() ) {
         // rendered audio buffers not available in application state,
         // for the individual indexed to via props to this component,
         // so we'll trigger network activation and rendering:
+        // // TODO: message that rendering process has started.
         this.props.getAudioBuffersFromMember(
           this.props.populationIndex, this.props.memberIndex
           /*, noteDeltas, reverse */
-        );
-
-        // TODO: message that rendering process has started.
+        ).then( () => {
+          if( ! this.state.soundBufferPlayedAutomatically ) {
+            // will play if buffer is available and then set
+            // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
+            this.playAudioRendering( 0 );
+          }
+        });
       }
 
     } else {
@@ -327,11 +334,11 @@ class IndividualContainer extends Component {
 
   getDownsampledMemberOutputs( targetSampleCount ) {
     let downsampledMemberOutputs = {};
-    for( let outputIndex in this.state.memberOutputs ) {
+    for( let outputIndex in this.getMemberOutputsFromApplicationState() ) {
       downsampledMemberOutputs[outputIndex] = {
         samples: this.getDownsampledArray(
-          this.state.memberOutputs[outputIndex].samples, targetSampleCount ),
-        frequency: this.state.memberOutputs[outputIndex].frequency
+          this.getMemberOutputsFromApplicationState()[outputIndex].samples, targetSampleCount ),
+        frequency: this.getMemberOutputsFromApplicationState()[outputIndex].frequency
       };
     }
     return downsampledMemberOutputs;
@@ -344,7 +351,7 @@ class IndividualContainer extends Component {
         values: memberOutputs[outputIndex].samples.map( function(oneSample, index) {
           return {
             x: index,
-            y: this.remapNumberToRange(oneSample, -1, 1, 0, 1)
+            y: remapNumberToRange(oneSample, -1, 1, 0, 1)
           };
         }.bind(this)),
         frequency: memberOutputs[outputIndex].frequency
@@ -391,12 +398,19 @@ class IndividualContainer extends Component {
       }
   }
 
-  playAudioRendering() {
-    const individualSoundBuffers = getRenderedSoundBuffersFromApplicationState();
+  /**
+   * Plays a sound buffer for the current member of the current population.
+   * @param  {Integer} notesFromBase What note to play, as deviation from the
+   *                                base note, where e.g. 0 refers to the base note,
+   *                                1 one note higher than the base note and
+   *                                -2 two notes lower than the base note.
+   */
+  playAudioRendering( notesFromBase ) {
+    const individualSoundBuffers = this.getRenderedSoundBuffersFromApplicationState();
     if( individualSoundBuffers ) {
-      console.log(`playAudioRendering, buffer length: ${this.networkIndividualSound.length}`);
+      console.log(`playAudioRendering, buffer length: ${individualSoundBuffers[ notesFromBase ].length}`);
       const soundToPlay = this.props.rendering.audioCtx.createBufferSource();
-      soundToPlay.buffer = individualSoundBuffers;
+      soundToPlay.buffer = individualSoundBuffers[ notesFromBase ];
       soundToPlay.connect( this.props.rendering.audioCtx.destination );
       soundToPlay.start();
 
@@ -435,13 +449,13 @@ class IndividualContainer extends Component {
   // },
 
   render() {
-    console.log("this.props.getAudioBuffersFromMember: ", this.props.getAudioBuffersFromMember);
-    this.props.getAudioBuffersFromMember();
+    // console.log("this.props.getAudioBuffersFromMember: ", this.props.getAudioBuffersFromMember);
+    // this.props.getAudioBuffersFromMember();
 
     ///// try populating one audio buffer from this member
     //...such as in:  https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode#Examples
 
-    if( Object.keys(this.state.memberOutputs).length ) {
+    // if( Object.keys(this.state.memberOutputs).length ) {
 
 // see now network-rendering
 
@@ -597,13 +611,13 @@ class IndividualContainer extends Component {
 //         console.log('Rendering failed: ' + err);
 //       });
 
-    }
+    // }
 
     ///// waveform visualization
 
     let waveformWidth = 1200; // TODO: window.innerWidth gives 0;
 
-    if( Object.keys(this.state.memberOutputs).length ) {
+    if( this.isMemberOutputAvailable() ) {
       let downsampledMemberOutputs =
         this.getDownsampledMemberOutputs( waveformWidth * 2 );
       var waveformVisualizationData =
@@ -614,7 +628,7 @@ class IndividualContainer extends Component {
 
     let waveformNodes = waveformVisualizationData.map( function(oneWaveformVizData) {
       return(
-        this.isAudible( oneWaveformVizData.frequency ) ?
+        isAudible( oneWaveformVizData.frequency ) ?
           <Waveform
             data={oneWaveformVizData}
             width={waveformWidth}
@@ -642,7 +656,7 @@ class IndividualContainer extends Component {
           waveformNodes && waveformNodes.length ?
           [
             ...waveformNodes,
-            <button onClick={this.playAudioRendering} key="play">Play</button>
+            <button onClick={this.playAudioRendering.bind(this, 0)} key="play">Play</button>
           ]
           : <em>Rendering waveform visualization</em>
         }
@@ -659,4 +673,4 @@ function mapStateToProps( state ) {
   };
 }
 
-export default connect(null, {getAudioBuffersFromMember})(IndividualContainer);
+export default connect(mapStateToProps, {getAudioBuffersFromMember})(IndividualContainer);

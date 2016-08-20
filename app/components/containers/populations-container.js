@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router';
 import { connect } from 'react-redux';
 import { setCurrentPopulation, setCurrentMember } from '../../actions/evolution';
 
@@ -22,7 +23,7 @@ class PopulationsContainer extends Component{
     return(
       <div>
         TODO: display tiles for each member of population
-              with navigation (<Link/>) to individual detail
+              with navigation to <Link to="/individual">individual detail</Link> 
               and ability to select individuals as parents for evolution.
         TODO: button to evolve next generation.
       </div>

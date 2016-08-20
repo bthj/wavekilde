@@ -4,28 +4,6 @@ import {
   PATCH_SET_CURRENT
 } from '../actions/types';
 
-const INITIAL_STATE = {
-  patches: new Map([
-    ['FM-AM-filter-distortion', FmAmFilterDistortion],
-    ['wavetable-mix', wavetableMix]
-  ]),
-  currentPatchKey: 'FM-AM-filter-distortion'
-};
-
-export default function( state = INITIAL_STATE, action ) {
-  switch( action.type ) {
-    case PATCH_ADD:
-      return state;
-    case PATCH_REMOVE:
-      return state;
-    case PATCH_SET_CURRENT:
-      return state;
-    default:
-      return state;
-  }
-}
-
-
 // hardcoded patches for intial state:
 
 const FmAmFilterDistortion = [
@@ -132,3 +110,24 @@ const wavetableMix = [
     "type": "audio"
   }
 ];
+
+const INITIAL_STATE = {
+  patches: new Map([
+    ['FM-AM-filter-distortion', FmAmFilterDistortion],
+    ['wavetable-mix', wavetableMix]
+  ]),
+  currentPatchKey: 'wavetable-mix'
+};
+
+export default function( state = INITIAL_STATE, action ) {
+  switch( action.type ) {
+    case PATCH_ADD:
+      return state;
+    case PATCH_REMOVE:
+      return state;
+    case PATCH_SET_CURRENT:
+      return state;
+    default:
+      return state;
+  }
+}

@@ -36,32 +36,32 @@ export default function( state = INITIAL_STATE, action ) {
   switch( action.type ) {
     case REQUEST_OUTPUTS_FOR_MEMBER:
       return { ...state,
-        renderingMemberOutputs: renderingMemberOutputs.setIn(
+        renderingMemberOutputs: state.renderingMemberOutputs.setIn(
           [action.populationIndex, action.memberIndex], true
         )
       };
     case RECEIVE_OUTPUTS_FOR_MEMBER:
       return {...state,
-        memberOutputs: memberOutputs.setIn(
+        memberOutputs: state.memberOutputs.setIn(
           [action.populationIndex, action.memberIndex], action.memberOutputs
         ),
-        renderingMemberOutputs: renderingMemberOutputs.setIn(
+        renderingMemberOutputs: state.renderingMemberOutputs.setIn(
           [action.populationIndex, action.memberIndex], false )
       };
     case REQUEST_AUDIO_BUFFER_FOR_MEMBER:
       return {...state,
-        renderingMemberSounds: renderingMemberSounds.setIn(
+        renderingMemberSounds: state.renderingMemberSounds.setIn(
           [action.populationIndex, action.memberIndex], true
         )
       };
     case RECEIVE_AUDIO_BUFFER_FOR_MEMBER:
       return {...state,
-        memberRenderedSounds: memberRenderedSounds.setIn(
+        memberRenderedSounds: state.memberRenderedSounds.setIn(
           [action.populationIndex, action.memberIndex], {
             0: action.audioBuffer // TODO: handle buffers for multiple notes, see rendering action
           }
         ),
-        renderingMemberSounds: renderingMemberSounds.setIn(
+        renderingMemberSounds: state.renderingMemberSounds.setIn(
           [action.populationIndex, action.memberIndex], true
         )
       };

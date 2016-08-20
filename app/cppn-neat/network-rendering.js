@@ -22,7 +22,7 @@ class Renderer {
       console.log('Wiring up audio graph...');
 
       const offlineCtx = new OfflineAudioContext( 1 /*channels*/,
-        this.duration, this.sampleRate);
+        this.sampleRate * this.duration, this.sampleRate);
 /*
       // Stereo
       let channels = 2;
@@ -80,7 +80,7 @@ class Renderer {
         let VCA = offlineCtx.createGain();
         VCA.gain.setValueCurveAtTime(new Float32Array( oneGainControlArray.map( oneGainValue => {
           return remapNumberToRange( oneGainValue, -1, 1, 0, 1 );
-        })), offlineCtx.currentTime, this.state.duration);
+        })), offlineCtx.currentTime, this.duration);
         audioSourceGains.push( VCA );
       });
       console.log('Done calculating gain values.');
@@ -202,7 +202,7 @@ class Renderer {
     let channels = samplesArrays.length;
 
     let arrayBuffer = audioCtx.createBuffer(
-      channels, this.state.frameCount, audioCtx.sampleRate );
+      channels, this.sampleCount, audioCtx.sampleRate );
 
     // Fill the buffer with signals according to the network outputs
     for( let channel=0; channel < channels; channel++ ) {
@@ -211,7 +211,7 @@ class Renderer {
       let nowBuffering = arrayBuffer.getChannelData( channel );
       let networkOutputBuffer = this.ensureBufferStartsAndEndsAtZero(
         samplesArrays[channel] );
-      for( let i=0; i < this.state.frameCount; i++ ) {
+      for( let i=0; i < this.sampleCount; i++ ) {
         nowBuffering[i] = networkOutputBuffer[i];
       }
     }
@@ -270,3 +270,5 @@ class Renderer {
   }
 
 }
+
+export default Renderer;

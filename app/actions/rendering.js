@@ -29,7 +29,7 @@ export function getAudioBuffersFromMember(
     const member = getState().evolution.populations[populationIndex][memberIndex];
     const {frameCount, duration} = getState().rendering;
     const {sampleRate} = getState().rendering.audioCtx;
-    const {currentPatch} = getState().patching.patches.get(
+    const currentPatch = getState().patching.patches.get(
       getState().patching.currentPatchKey );
 
     const activator = new Activator( frameCount, sampleRate );

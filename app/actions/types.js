@@ -1,8 +1,8 @@
 export const POPULATION_SET_CURRENT = 'population_set_current';
 export const POPULATION_EVOLVE = 'population_evolve';
-MEMBER_SET_CURRENT = 'member_set_current',
+export const MEMBER_SET_CURRENT = 'member_set_current';
 
-export const REQUEST_OUTPUTS_FOR_MEMBER = 'generate_outputs_for_member';
+export const REQUEST_OUTPUTS_FOR_MEMBER = 'request_outputs_for_member';
 export const RECEIVE_OUTPUTS_FOR_MEMBER = 'receive_outputs_for_member';
 export const REQUEST_AUDIO_BUFFER_FOR_MEMBER = 'request_audio_buffer_for_member';
 export const RECEIVE_AUDIO_BUFFER_FOR_MEMBER = 'receive_audio_buffer_for_member';
