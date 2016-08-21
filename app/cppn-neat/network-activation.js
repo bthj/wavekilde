@@ -44,7 +44,7 @@ class Activator {
       let uniqueInputPeriods = new Set( outputsToActivate.map( o =>
         memberOutputs[o.index].inputPeriods ) );
 
-      var networkActivationStart = performance.now();
+      const networkActivationStart = performance.now();
       uniqueInputPeriods.forEach(function( inputPeriods ) {
 
         // TODO: do something like this in a separate function, to get the input signals generally..
@@ -91,11 +91,11 @@ class Activator {
         }
       }.bind(this));
 
-      var networkActivationEnd = performance.now();
-      console.log(`Activating network,
+      const networkActivationEnd = performance.now();
+      console.log(`%c Activating network,
         for ${uniqueInputPeriods.size} unique periods
         and ${this.sampleCount} samples,
-        took ${networkActivationEnd - networkActivationStart}  milliseconds.`);
+        took ${networkActivationEnd - networkActivationStart}  milliseconds.`,'color:darkorange');
 
       if( Object.keys(memberOutputs).length ) {
         resolve( memberOutputs );

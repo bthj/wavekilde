@@ -21,8 +21,13 @@ class Renderer {
 
       console.log('Wiring up audio graph...');
 
+      const startAudioCtxInstance = performance.now();
+
       const offlineCtx = new OfflineAudioContext( 1 /*channels*/,
         this.sampleRate * this.duration, this.sampleRate);
+
+      const endAudioCtxInstance = performance.now();
+      console.log(`%c instantiating audio context took ${endAudioCtxInstance-startAudioCtxInstance} milliseconds`,'color:darkorange');
 /*
       // Stereo
       let channels = 2;
@@ -52,6 +57,8 @@ class Renderer {
 */
 
 
+      const startWaveTypeCategorization = performance.now();
+
       ///// wave table (or vector) synthes:
       // get a control wave for the mix
       let waveTableMixWave = memberOutputs[0];
@@ -68,12 +75,22 @@ class Renderer {
         return this.getAudioBufferSource( [oneOutput.samples], offlineCtx );
       });
 
+      const endWaveTypeCategorization = performance.now();
+      console.log(`%c Wave type categorization took ${endWaveTypeCategorization - startWaveTypeCategorization} milliseconds`, 'color:darkorange');
+
       // gain values for each audio wave in the wave table,
       // each controlled by a value curve from the calculated gain values
       console.log('Calculating gain values...');
+      const startCalculatingGainValues = performance.now();
       let gainValues = this.getGainValuesPerAudioWave( audioWaves.length, waveTableMixWave.samples );
-      this.gainValues = gainValues; // temporary global assignment, for logging in showMixGains()
+      // this.gainValues = gainValues; // temporary global assignment, for logging in showMixGains()
       // console.log("gainValues");console.log(gainValues);
+      const endCalculatingGainValues = performance.now();
+      console.log(`%c Calculating gain values took ${endCalculatingGainValues - startCalculatingGainValues} milliseconds`, 'color:darkorange');
+
+
+      const startApplyingGainValues = performance.now();
+
       let audioSourceGains = [];
       console.log('Applying gain values to each gain node...');
       gainValues.forEach( (oneGainControlArray, gainIndex) => {
@@ -83,7 +100,13 @@ class Renderer {
         })), offlineCtx.currentTime, this.duration);
         audioSourceGains.push( VCA );
       });
+
+      const endApplyingGainValues = performance.now();
+      console.log(`%c Applying gain values took ${endApplyingGainValues - startApplyingGainValues} milliseconds`, 'color:darkorange');
       console.log('Done calculating gain values.');
+
+
+      const startConnectingAudioGraph = performance.now();
 
       // connect each audio source to a gain node,
       audioSources.forEach(
@@ -98,6 +121,9 @@ class Renderer {
 
       // connect the mixer to the output device
       mergerNode.connect( offlineCtx.destination );
+
+      const endConnectingAudioGraph = performance.now();
+      console.log(`%c Connecting audio graph took ${endConnectingAudioGraph - startConnectingAudioGraph} milliseconds`, 'color:darkorange');
 
       // start all the audio sources
       let currentTime = offlineCtx.currentTime;
@@ -159,9 +185,14 @@ class Renderer {
 
       console.log('Done wiring up audio graph, will now render.');
 
+      const startRenderAudioGraph = performance.now();
+
       // Offline rendering of the audio graph to a reusable buffer
       offlineCtx.startRendering().then(function( renderedBuffer ) {
         console.log('Rendering completed successfully');
+
+        const endRenderAudioGraph = performance.now();
+        console.log(`%c Rendering audio graph took ${endRenderAudioGraph - startRenderAudioGraph} milliseconds`, 'color:darkorange');
 
         const networkIndividualSound = this.ensureBufferStartsAndEndsAtZero(
           renderedBuffer );

@@ -23,7 +23,7 @@ class PopulationsContainer extends Component{
     return(
       <div>
         TODO: display tiles for each member of population
-              with navigation to <Link to="/individual">individual detail</Link> 
+              with navigation to <Link to="/individual">individual detail</Link>
               and ability to select individuals as parents for evolution.
         TODO: button to evolve next generation.
       </div>
