@@ -174,7 +174,7 @@ class IndividualContainer extends Component {
 
     let waveformWidth = 1200; // TODO: window.innerWidth gives 0;
 
-    if( this.isMemberOutputAvailable() ) {
+    if( false /* need to ensure visualization rendering is only performed once:  this.isMemberOutputAvailable() */ ) {
       const startDownsamplingNetworkOutputs = performance.now();
       let downsampledMemberOutputs =
         this.getDownsampledMemberOutputs( waveformWidth * 2 );
