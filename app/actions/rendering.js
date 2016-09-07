@@ -1,8 +1,11 @@
 import {
+/*
   REQUEST_OUTPUTS_FOR_MEMBER,
   RECEIVE_OUTPUTS_FOR_MEMBER,
   REQUEST_AUDIO_BUFFER_FOR_MEMBER,
   RECEIVE_AUDIO_BUFFER_FOR_MEMBER
+*/
+  GET_OUTPUTS_FOR_MEMBER, GET_AUDIO_BUFFERS_FOR_MEMBER
 } from './types';
 
 import Activator from '../cppn-neat/network-activation';
@@ -22,6 +25,7 @@ import Renderer from '../cppn-neat/network-rendering';
  *                                  should be reversed.
  * @return {Array}                  Audio buffer(s).
  */
+/*
 export function getAudioBuffersFromMember(
     populationIndex, memberIndex, noteDeltas, reverse ) {
 
@@ -58,16 +62,22 @@ export function getAudioBuffersFromMember(
     });
   }
 }
+*/
 
-/*
 export function getOutputsForMember( populationIndex, memberIndex ) {
 
   return function(dispatch, getState) {
+
     const member = getState().evolution.populations[populationIndex][memberIndex];
     const {frameCount} = getState().rendering;
     const {sampleRate} = getState().rendering.audioCtx;
+    const currentPatch = getState().patching.patches.get(
+      getState().patching.currentPatchKey );
 
     dispatch( requestMemberOutputsFromActivator(populationIndex, memberIndex) );
+
+    dispatch( getOutputsForMember( member, currentPatch, frameCount, sampleRate ) );
+/*
 
     const activator = new Activator( frameCount, sampleRate );
     // Get member outputs from Activator,
@@ -79,19 +89,26 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
       // update app state with results of network activation
       dispatch( receiveOutputsForMember( memberOutputs, populationIndex, memberIndex) );
     });
+*/
   }
 }
 
 export function getAudioBuffersForMember(
-  populationIndex, memberIndex, noteDeltas, reverse ) {
-
+  memberOutputs,
+  populationIndex, memberIndex, noteDeltas, reverse )
+{
   return function(dispatch, getState) {
+
     const {frameCount, duration} = getState().rendering;
     const {sampleRate} = getState().rendering.audioCtx;
     const currentPatch = getState().patching.patches.get(
       getState().patching.currentPatchKey );
-    // TODO: get memberOutputs from app state
 
+    dispatch( requestAudioBufferForMember(populationIndex, memberIndex) );
+
+    dispatch( getAudioBuffersForMember(
+      memberOutputs, currentPatch, samplerate, frameCount, duration ) );
+/*
     dispatch( requestAudioBufferForMember(populationIndex, memberIndex) );
 
     const renderer = new Renderer( frameCount, sampleRate, duration );
@@ -104,9 +121,11 @@ export function getAudioBuffersForMember(
         dispatch( receiveAudioBufferForMember(
           audioBuffer, populationIndex, memberIndex ) );
       });
+*/
   }
 }
-*/
+
+
 
 function requestMemberOutputsFromActivator( populationIndex, memberIndex ) {
   return {
@@ -115,14 +134,27 @@ function requestMemberOutputsFromActivator( populationIndex, memberIndex ) {
     memberIndex
   };
 }
-function receiveOutputsForMember( memberOutputs, populationIndex, memberIndex ) {
+
+function getOutputsForMember( member, currentPatch, frameCount, sampleRate ) {
+
   return {
-    type: RECEIVE_OUTPUTS_FOR_MEMBER,
-    memberOutputs,
-    populationIndex,
-    memberIndex
+    task: GET_OUTPUTS_FOR_MEMBER,
+    member,
+    currentPatch,
+    frameCount,
+    sampleRate
   };
 }
+
+
+// function receiveOutputsForMember( memberOutputs, populationIndex, memberIndex ) {
+//   return {
+//     type: RECEIVE_OUTPUTS_FOR_MEMBER,
+//     memberOutputs,
+//     populationIndex,
+//     memberIndex
+//   };
+// }
 
 function requestAudioBufferForMember( populationIndex, memberIndex ) {
   return {
@@ -131,11 +163,25 @@ function requestAudioBufferForMember( populationIndex, memberIndex ) {
     memberIndex
   };
 }
-function receiveAudioBufferForMember( audioBuffer, populationIndex, memberIndex ) {
+
+function getAudioBuffersForMember(
+  memberOutputs, currentPatch, samplerate, frameCount, duration )
+{
   return {
-    type: RECEIVE_AUDIO_BUFFER_FOR_MEMBER,
-    audioBuffer,
-    populationIndex,
-    memberIndex
+    task: GET_AUDIO_BUFFERS_FOR_MEMBER,
+    memberOutputs,
+    currentPatch,
+    sampleRate,
+    frameCount,
+    duration
   };
 }
+
+// function receiveAudioBufferForMember( audioBuffer, populationIndex, memberIndex ) {
+//   return {
+//     type: RECEIVE_AUDIO_BUFFER_FOR_MEMBER,
+//     audioBuffer,
+//     populationIndex,
+//     memberIndex
+//   };
+// }

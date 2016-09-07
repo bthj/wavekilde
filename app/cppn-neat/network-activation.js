@@ -1,5 +1,5 @@
 // import hamsters from 'webhamsters/src/hamsters';
-import Parallel from 'paralleljs';
+// import Parallel from 'paralleljs';
 import neatjs from 'neatjs';
 import cppnjs from 'cppnjs';
 
@@ -15,25 +15,25 @@ class Activator {
     this.sampleRate = sampleRate;
   }
 
-  activate( member, neatjs ) {
-    var params = {'array':[0,1,2,3,4,5,6,7,8,9], 'member':member};
-    hamsters.run(params, function() {
-
-      var newCPPN = new neatjs.neatGenome("asdf",
-      params.member.offspring.nodes,
-      params.member.offspring.connections,
-      params.member.offspring.inputNodeCount,
-      params.member.offspring.outputNodeCount );
-
-      const arr = params.array;
-      arr.forEach(function(item) {
-        rtn.data.push( newCPPN );
-      });
-    }, function(output) {
-      console.log("output: ", output);
-      return output
-    }, 1, false);
-  }
+  // activate( member, neatjs ) {
+  //   var params = {'array':[0,1,2,3,4,5,6,7,8,9], 'member':member};
+  //   hamsters.run(params, function() {
+  //
+  //     var newCPPN = new neatjs.neatGenome("asdf",
+  //     params.member.offspring.nodes,
+  //     params.member.offspring.connections,
+  //     params.member.offspring.inputNodeCount,
+  //     params.member.offspring.outputNodeCount );
+  //
+  //     const arr = params.array;
+  //     arr.forEach(function(item) {
+  //       rtn.data.push( newCPPN );
+  //     });
+  //   }, function(output) {
+  //     console.log("output: ", output);
+  //     return output
+  //   }, 1, false);
+  // }
 
   getInputSignals( inputPeriods, variationOnPeriods ) {
     const startInputSignalsCalculation = performance.now();
@@ -79,6 +79,17 @@ class Activator {
       const memberCPPN = member.offspring.networkDecode();
 
       const memberOutputs = {};
+
+
+      // // member cppn timing measure  TODO: remove
+      // const startInstantiateNeatGenome = performance.now();
+      // new neatjs.neatGenome("asdf",
+      //   member.offspring.nodes,
+      //   member.offspring.connections,
+      //   member.offspring.inputNodeCount,
+      //   member.offspring.outputNodeCount );
+      // const endInstantiateNeatGenome = performance.now();
+      // console.log(`%cInstantiating neat genome took ${endInstantiateNeatGenome - startInstantiateNeatGenome} milliseconds`,"color:blue");
 
 /*
       var p = new Parallel([1, 2, 3], {

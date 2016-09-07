@@ -1,6 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux';
-import { getAudioBuffersFromMember } from '../../actions/rendering';
+import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
 import { isAudible, remapNumberToRange } from '../../util/range';
 
 // import update from 'react-addons-update';
@@ -44,17 +44,38 @@ class IndividualContainer extends Component {
     return this.props.populationIndex >= 0 && this.props.memberIndex >= 0;
   }
 
+  startMemberOutputsRendering() {
+    return this.props.getOutputsForMember(
+      this.props.populationIndex, this.props.memberIndex
+    );
+  }
+
+  startAudioBuffersRendering() {
+    return this.props.getAudioBuffersForMember(
+      getMemberOutputsFromApplicationState(),
+      this.props.populationIndex, this.props.memberIndex,
+      /*, noteDeltas, reverse */
+    );
+  }
+
   componentWillReceiveProps( nextProps ) {
 
     if( this.isMemberOutputAvailable() ) {
       console.log("this.isMemberOutputAvailable(): ", this.isMemberOutputAvailable());
       // TODO: message that network activation has completed
       // TODO: set up waveform visualization for the available network outputs.
+
+      if( ! this.isAudioBufferAvailable() ) {
+
+        this.startAudioBuffersRendering();
+      }
     }
     if( this.isAudioBufferAvailable() ) {
       console.log("this.isAudioBufferAvailable(): ", this.isAudioBufferAvailable());
-      // TODO: message that audio rendering has completed
-      // TODO: ! we never reach here
+
+      if( ! this.state.soundBufferPlayedAutomatically ) {
+        this.playAudioRendering( 0 );
+      }
     }
   }
 
@@ -62,22 +83,37 @@ class IndividualContainer extends Component {
 
     if( this.isMemberSelectedFromPopulation() ) {
 
-      if( ! this.getRenderedSoundBuffersFromApplicationState() ) {
-        // rendered audio buffers not available in application state,
-        // for the individual indexed to via props to this component,
-        // so we'll trigger network activation and rendering:
-        // // TODO: message that rendering process has started.
-        this.props.getAudioBuffersFromMember(
-          this.props.populationIndex, this.props.memberIndex
-          /*, noteDeltas, reverse */
-        ).then( () => {
-          if( ! this.state.soundBufferPlayedAutomatically ) {
-            // will play if buffer is available and then set
-            // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
-            this.playAudioRendering( 0 );
-          }
-        });
+      if( ! this.isMemberOutputAvailable() ) {
+
+        this.startMemberOutputsRendering();
+
+      } else if( ! this.isAudioBufferAvailable() ) {
+
+        this.startAudioBuffersRendering();
+
+      } else {
+        this.playAudioRendering( 0 );
       }
+
+      // if( ! this.getRenderedSoundBuffersFromApplicationState() ) {
+      //   // rendered audio buffers not available in application state,
+      //   // for the individual indexed to via props to this component,
+      //   // so we'll trigger network activation and rendering:
+      //   // // TODO: message that rendering process has started.
+      //   const startGetAudioBuffers = performance.now();
+      //   this.props.getAudioBuffersFromMember(
+      //     this.props.populationIndex, this.props.memberIndex
+      //     /*, noteDeltas, reverse */
+      //   ).then( () => {
+      //     const endGetAudioBuffers = performance.now();
+      //     console.log(`%c getAudioBuffersFromMember action took ${endGetAudioBuffers - startGetAudioBuffers} milliseconds`,'color:DarkSalmon');
+      //     if( ! this.state.soundBufferPlayedAutomatically ) {
+      //       // will play if buffer is available and then set
+      //       // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
+      //       this.playAudioRendering( 0 );
+      //     }
+      //   });
+      // }
 
     } else {
       this.context.router.push( '/populations' );
@@ -219,10 +255,14 @@ class IndividualContainer extends Component {
         {
           waveformNodes && waveformNodes.length ?
           [
-            ...waveformNodes,
-            <button onClick={this.playAudioRendering.bind(this, 0)} key="play">Play</button>
+            ...waveformNodes
           ]
           : <em>Rendering waveform visualization</em>
+        }
+        {
+          this.isAudioBufferAvailable() ?
+            <button onClick={this.playAudioRendering.bind(this, 0)} key="play">Play</button>
+            : ''
         }
       </div>
     );
@@ -237,4 +277,7 @@ function mapStateToProps( state ) {
   };
 }
 
-export default connect(mapStateToProps, {getAudioBuffersFromMember})(IndividualContainer);
+export default connect(mapStateToProps, {
+  // getAudioBuffersFromMember
+  getOutputsForMember, getAudioBuffersForMember
+})(IndividualContainer);
