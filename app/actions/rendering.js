@@ -22,6 +22,8 @@ import Renderer from '../cppn-neat/network-rendering';
  *                                  should be reversed.
  * @return {Array}                  Audio buffer(s).
  */
+
+/*
 export function getAudioBuffersFromMember(
     populationIndex, memberIndex, noteDeltas, reverse ) {
 
@@ -58,17 +60,22 @@ export function getAudioBuffersFromMember(
     });
   }
 }
+*/
 
-/*
+
 export function getOutputsForMember( populationIndex, memberIndex ) {
 
   return function(dispatch, getState) {
     const member = getState().evolution.populations[populationIndex][memberIndex];
     const {frameCount} = getState().rendering;
     const {sampleRate} = getState().rendering.audioCtx;
+    const currentPatch = getState().patching.patches.get(
+      getState().patching.currentPatchKey );
 
     dispatch( requestMemberOutputsFromActivator(populationIndex, memberIndex) );
 
+    // TODO: Perform network actiation on worker
+    // ...dispatch receiveOutputsForMember when worker posts back...
     const activator = new Activator( frameCount, sampleRate );
     // Get member outputs from Activator,
     // providing it sampleCount, sampleRate and
@@ -83,6 +90,7 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
 }
 
 export function getAudioBuffersForMember(
+  memberOutputs,
   populationIndex, memberIndex, noteDeltas, reverse ) {
 
   return function(dispatch, getState) {
@@ -90,7 +98,6 @@ export function getAudioBuffersForMember(
     const {sampleRate} = getState().rendering.audioCtx;
     const currentPatch = getState().patching.patches.get(
       getState().patching.currentPatchKey );
-    // TODO: get memberOutputs from app state
 
     dispatch( requestAudioBufferForMember(populationIndex, memberIndex) );
 
@@ -106,7 +113,7 @@ export function getAudioBuffersForMember(
       });
   }
 }
-*/
+
 
 function requestMemberOutputsFromActivator( populationIndex, memberIndex ) {
   return {

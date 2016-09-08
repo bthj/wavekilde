@@ -62,7 +62,7 @@ export default function( state = INITIAL_STATE, action ) {
           }
         ),
         renderingMemberSounds: state.renderingMemberSounds.setIn(
-          [action.populationIndex, action.memberIndex], true
+          [action.populationIndex, action.memberIndex], false
         )
       };
     default:
