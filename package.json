@@ -29,7 +29,6 @@
   "dependencies": {
     "immutable": "^3.8.1",
     "neatjs": "^0.3.1",
-    "paralleljs": "^0.2.1",
     "react": "^15.0.2",
     "react-addons-update": "^15.1.0",
     "react-d3-components": "^0.6.3",
@@ -39,7 +38,7 @@
     "redux": "^3.5.2",
     "redux-logger": "^2.6.1",
     "redux-thunk": "^2.1.0",
-    "webhamsters": "^3.7.0"
+    "worker-loader": "^0.7.1"
   },
   "private": true
 }

@@ -76,7 +76,19 @@ class Activator {
 
     return new Promise( (resolve, reject) => {
 
-      const memberCPPN = member.offspring.networkDecode();
+      let memberCPPN;
+      if( member.offspring.networkDecode ) {
+        memberCPPN = member.offspring.networkDecode();
+      } else {
+        // we didn't receive member as a neatjs/cppnjs instance,
+        // but rather an object representation of it,
+        // so we'll use the data from that object to create a new instance:
+        memberCPPN = new neatjs.neatGenome(`${Math.random()}`,
+        member.offspring.nodes,
+        member.offspring.connections,
+        member.offspring.inputNodeCount,
+        member.offspring.outputNodeCount ).networkDecode();
+      }
 
       const memberOutputs = {};
 
@@ -215,11 +227,14 @@ class Activator {
           const outputSignals = this.getOutputSignals(
             inputSignals, outputIndexs, memberCPPN );
 
+          const startApplyMemberOutputs = performance.now();
           outputSignals.forEach( (oneOutputSlice, sampleIndex) => {
             for( let [outputIndex, outputValue] of oneOutputSlice ) {
               memberOutputs[ outputIndex ].samples[sampleIndex] = outputValue;
             }
           });
+          const endApplyMemberOutputs = performance.now();
+          console.log(`%c Applying member outputs for one input period took ${endApplyMemberOutputs - startApplyMemberOutputs} milliseconds`,'color:orange');
 
           // outputsToActivate.forEach( function(oneOutput) {
           //   if( inputPeriods == memberOutputs[ oneOutput.index ].inputPeriods ) {

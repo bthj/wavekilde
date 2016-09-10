@@ -47,6 +47,9 @@ class IndividualContainer extends Component {
   isMemberSelectedFromPopulation() {
     return this.props.populationIndex >= 0 && this.props.memberIndex >= 0;
   }
+  getSelectedMember() {
+    return this.props.populations[this.props.populationIndex][this.props.memberIndex];
+  }
 
   startMemberOutputsRendering() {
     return this.props.getOutputsForMember(
@@ -267,6 +270,10 @@ class IndividualContainer extends Component {
             <button onClick={this.playAudioRendering.bind(this, 0)} key="play">Play</button>
             : ''
         }
+        {
+          this.isMemberSelectedFromPopulation() ?
+          <pre>{JSON.stringify( this.getSelectedMember() ,null,'\t')}</pre> : ''
+        }
       </div>
     );
   }
@@ -276,7 +283,8 @@ function mapStateToProps( state ) {
   return {
     rendering: state.rendering,
     populationIndex: state.evolution.currentPopulationIndex,
-    memberIndex: state.evolution.currentMemberIndex
+    memberIndex: state.evolution.currentMemberIndex,
+    populations: state.evolution.populations
   };
 }
 

@@ -8,6 +8,9 @@ import {
 import Activator from '../cppn-neat/network-activation';
 import Renderer from '../cppn-neat/network-rendering';
 
+const ActivationWorker = require("worker!../workers/network-activation-worker.js");
+const activationWorker = new ActivationWorker();
+
 /**
  * Get audio from a CPPN network by activating its outputs
  * and rendering an audio graph,
@@ -62,7 +65,19 @@ export function getAudioBuffersFromMember(
 }
 */
 
+let _dispatch = undefined;
 
+/**
+ * Kinda hackish way to retain a reference to the redux store dispatch function,
+ * for use when a callback comes in from a web worker
+ * ...should maybe study discussion at https://github.com/reactjs/redux/issues/776
+ * @param  {[type]} dispatch Reference to redux's store dispatch function
+ */
+function grabReferenceToReduxStoreDispatch( dispatch ) {
+  if( ! _dispatch ) _dispatch = dispatch;
+}
+
+let postToActivationWorker;
 export function getOutputsForMember( populationIndex, memberIndex ) {
 
   return function(dispatch, getState) {
@@ -72,10 +87,26 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
     const currentPatch = getState().patching.patches.get(
       getState().patching.currentPatchKey );
 
+    grabReferenceToReduxStoreDispatch( dispatch );
+
     dispatch( requestMemberOutputsFromActivator(populationIndex, memberIndex) );
 
     // TODO: Perform network actiation on worker
     // ...dispatch receiveOutputsForMember when worker posts back...
+
+    if( ! window.Worker ) {
+      alert("Please use a modern web browser that supports Web Workers");
+    }
+    postToActivationWorker = performance.now();
+    activationWorker.postMessage({
+      populationIndex,
+      memberIndex,
+      member,
+      currentPatch,
+      frameCount,
+      sampleRate
+    });
+/*
     const activator = new Activator( frameCount, sampleRate );
     // Get member outputs from Activator,
     // providing it sampleCount, sampleRate and
@@ -86,7 +117,21 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
       // update app state with results of network activation
       dispatch( receiveOutputsForMember( memberOutputs, populationIndex, memberIndex) );
     });
+*/
   }
+}
+
+/**
+ * We receive this message when the activation worker (and its subworkers)
+ * has completed activating the network for all (frameCount) samples
+ */
+activationWorker.onmessage = function(e) {
+  // Activation complete, let's dispatch an action with the member outputs
+  const receiveFromActivationWorker = performance.now();
+  console.log(`%c Receiving data from activation worker took ${receiveFromActivationWorker - postToActivationWorker} milliseconds`, 'color: deep-purple');
+  console.log('Message received from worker: ', e.data );
+  _dispatch( receiveOutputsForMember(
+    e.data.memberOutputs, e.data.populationIndex, e.data.memberIndex) );
 }
 
 export function getAudioBuffersForMember(
