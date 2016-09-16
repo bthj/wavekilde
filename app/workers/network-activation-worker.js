@@ -9,16 +9,14 @@ onmessage = function(e) {
   activator.activateMember( e.data.member, e.data.currentPatch )
   .then( memberOutputs => {
     console.log("done activating, memberOutputs: ", memberOutputs);
+    console.log("transferables: ", [...memberOutputs.values()].map( oneOutput => oneOutput.samples.buffer ) );
     postMessage({
+      startSending: performance.now(),
       populationIndex: e.data.populationIndex,
       memberIndex: e.data.memberIndex,
       memberOutputs
     }
-    //, memberOutputs.map( oneOutput => new Float32Array(oneOutput.samples) ) /*<- transfer list*/
+    , [...memberOutputs.values()].map( oneOutput => oneOutput.samples.buffer ) /*<- transfer list*/
     );
   });
-
-  // var workerResult = 'Result: ' + (e.data[0] * e.data[1]);
-  // console.log('Posting message back to main script');
-
 }

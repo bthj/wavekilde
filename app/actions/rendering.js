@@ -128,6 +128,7 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
 activationWorker.onmessage = function(e) {
   // Activation complete, let's dispatch an action with the member outputs
   const receiveFromActivationWorker = performance.now();
+  console.log(`%c Posting result from activation worker took ${receiveFromActivationWorker - e.data.startSending} milliseconds`, 'color: deep-purple');
   console.log(`%c Receiving data from activation worker took ${receiveFromActivationWorker - postToActivationWorker} milliseconds`, 'color: deep-purple');
   console.log('Message received from worker: ', e.data );
   _dispatch( receiveOutputsForMember(

@@ -61,11 +61,10 @@ class Renderer {
 
       ///// wave table (or vector) synthes:
       // get a control wave for the mix
-      let waveTableMixWave = memberOutputs[0];
+      let waveTableMixWave = memberOutputs.get(0);
       // and the audio waves for the wave table, which the control wave will mix together
       let audioWaves = [];
-      for( let outputIndex in memberOutputs ) {
-        let output = memberOutputs[outputIndex];
+      for( let [outputIndex, output] of memberOutputs ) {
         if( isAudible(output.frequency) && 0 != outputIndex ) {
           audioWaves.push( output );
         }
@@ -153,14 +152,14 @@ class Renderer {
       // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
       // start controlling the amplifier's gain:  AM
       VCA.gain.setValueCurveAtTime(
-        new Float32Array( this.state.memberOutputs[2].samples.map(function(oneSample) {
+        new Float32Array( this.state.memberOutputs.get(2).samples.map(function(oneSample) {
           return remapNumberToRange(oneSample, -1, 1, 0, 1);
         }.bind(this)) ),
         offlineCtx.currentTime, this.state.duration
       );
       // use a control signal to mess with the detuning of the audio source:  FM
       source.detune.setValueCurveAtTime(
-        new Float32Array( this.state.memberOutputs[3].samples.map(function(oneSample) {
+        new Float32Array( this.state.memberOutputs.get(3).samples.map(function(oneSample) {
           return remapNumberToRange(oneSample, -1, 1, -1000, 1000);
         }.bind(this)) ),
         offlineCtx.currentTime, this.state.duration*1.1
@@ -170,13 +169,13 @@ class Renderer {
       );
       // assign a sample array from one neural network output to sweep the filter:  subtractive synthesis
       biquadFilter.frequency.setValueCurveAtTime(
-        new Float32Array(this.state.memberOutputs[4].samples.map(function(oneSample) {
+        new Float32Array(this.state.memberOutputs.get(4).samples.map(function(oneSample) {
           return remapNumberToRange(oneSample, -1, 1, 0, 2000);
         }.bind(this)) ),
         offlineCtx.currentTime, this.state.duration
       ); // TODO: use network outputs to control filter's gain or Q ?
       // distortion
-      distortion.curve = new Float32Array(this.state.memberOutputs[5].samples);
+      distortion.curve = new Float32Array(this.state.memberOutputs.get(5).samples);
 
 
       // start the source playing

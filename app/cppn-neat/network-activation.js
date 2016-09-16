@@ -3,8 +3,6 @@
 import neatjs from 'neatjs';
 import cppnjs from 'cppnjs';
 
-function worksGreat(n) { return n * n }
-
 /**
  * Activates outputs of the provided network
  */
@@ -90,7 +88,7 @@ class Activator {
         member.offspring.outputNodeCount ).networkDecode();
       }
 
-      const memberOutputs = {};
+      const memberOutputs = new Map();
 
 /*
       var p = new Parallel([1, 2, 3], {
@@ -177,17 +175,17 @@ class Activator {
       }
 
       outputsToActivate.forEach( function(oneOutput) {
-        memberOutputs[ oneOutput.index ] = {
-          samples: new Array(this.sampleCount), // TODO: typed array?
+        memberOutputs.set( oneOutput.index, {
+          samples: new Float32Array(this.sampleCount), // typed array for samples
           frequency: oneOutput.frequency,
           inputPeriods: oneOutput.frequency *
             (this.sampleCount / this.sampleRate)
-        };
+        });
       }.bind(this));
 
       // let's only activate the network once per unique input periods value / sample
       let uniqueInputPeriods = new Set( outputsToActivate.map( o =>
-        memberOutputs[o.index].inputPeriods ) );
+        memberOutputs.get(o.index).inputPeriods ) );
 
       const networkActivationStart = performance.now();
       uniqueInputPeriods.forEach(function( inputPeriods ) {
@@ -216,9 +214,10 @@ class Activator {
           memberCPPN.recursiveActivation();
 */
 
+          // collect output indexes associated with the input periods value being activated for
           const outputIndexs = [];
           outputsToActivate.forEach( oneOutput => {
-            if( inputPeriods == memberOutputs[oneOutput.index].inputPeriods ) {
+            if( inputPeriods == memberOutputs.get(oneOutput.index).inputPeriods ) {
               outputIndexs.push( oneOutput.index );
             }
           });
@@ -230,7 +229,7 @@ class Activator {
           const startApplyMemberOutputs = performance.now();
           outputSignals.forEach( (oneOutputSlice, sampleIndex) => {
             for( let [outputIndex, outputValue] of oneOutputSlice ) {
-              memberOutputs[ outputIndex ].samples[sampleIndex] = outputValue;
+              memberOutputs.get( outputIndex ).samples[sampleIndex] = outputValue;
             }
           });
           const endApplyMemberOutputs = performance.now();
@@ -254,7 +253,7 @@ class Activator {
         and ${this.sampleCount} samples,
         took ${networkActivationEnd - networkActivationStart}  milliseconds.`,'color:darkorange');
 
-      if( Object.keys(memberOutputs).length ) {
+      if( memberOutputs.size ) {
         resolve( memberOutputs );
       } else {
         reject( "No member outputs activated" );
