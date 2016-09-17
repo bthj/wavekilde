@@ -99,6 +99,7 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
     }
     postToActivationWorker = performance.now();
     activationWorker.postMessage({
+      multicoreComputation: true,
       populationIndex,
       memberIndex,
       member,

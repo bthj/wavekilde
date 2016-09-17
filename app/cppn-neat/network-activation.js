@@ -8,9 +8,20 @@ import cppnjs from 'cppnjs';
  */
 class Activator {
 
-  constructor( sampleCount, sampleRate ) {
+  constructor( sampleCount, sampleRate, sampleCountToActivate, sampleOffset ) {
     this.sampleCount = sampleCount;
     this.sampleRate = sampleRate;
+
+    if( sampleCountToActivate ) {
+      // ^ optional constructor parameter,
+      // to only create input signals to activate a subset
+      // of the desired total sampleCount,
+      // useful for multicore computation on multiple sub-web workers.
+      this.sampleCountToActivate = sampleCountToActivate;
+    } else {
+      this.sampleCountToActivate = sampleCount;
+    }
+    sampleOffset ? this.sampleOffset = sampleOffset : this.sampleOffset = 0;
   }
 
   // activate( member, neatjs ) {
@@ -35,8 +46,8 @@ class Activator {
 
   getInputSignals( inputPeriods, variationOnPeriods ) {
     const startInputSignalsCalculation = performance.now();
-    let inputSignals = Array(this.sampleCount).fill(0).map((v,c) => {
-      let rangeFraction = c / (this.sampleCount-1);
+    let inputSignals = Array(this.sampleCountToActivate).fill(0).map((v,c) => {
+      let rangeFraction = (c+this.sampleOffset) / (this.sampleCount-1);
       let mainInputSignal = this.lerp( -1, 1, rangeFraction );
       if( variationOnPeriods ) {
         var extraInput = Math.sin( inputPeriods * mainInputSignal );
@@ -176,7 +187,7 @@ class Activator {
 
       outputsToActivate.forEach( function(oneOutput) {
         memberOutputs.set( oneOutput.index, {
-          samples: new Float32Array(this.sampleCount), // typed array for samples
+          samples: new Float32Array(this.sampleCount), // typed array for samples; results in faster transfers via message passing from worker
           frequency: oneOutput.frequency,
           inputPeriods: oneOutput.frequency *
             (this.sampleCount / this.sampleRate)
