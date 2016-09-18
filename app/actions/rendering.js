@@ -122,7 +122,7 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
   }
 }
 
-const numWorkers = 4;
+const numWorkers = window.navigator.hardwareConcurrency || 4;
 const pendingWorkers = {};
 const subResults = {};
 
