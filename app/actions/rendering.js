@@ -8,8 +8,8 @@ import {
 import Activator from '../cppn-neat/network-activation';
 import Renderer from '../cppn-neat/network-rendering';
 
-// const ActivationWorker = require("worker!../workers/network-activation-worker.js");
-// const activationWorker = new ActivationWorker();
+const ActivationWorker = require("worker!../workers/network-activation-worker.js");
+const activationWorker = new ActivationWorker();
 const ActivationSubWorker = require("worker!../workers/network-activation-sub-worker.js");
 
 /**
@@ -98,10 +98,10 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
     if( ! window.Worker ) {
       alert("Please use a modern web browser that supports Web Workers");
     }
-/*
+
     postToActivationWorker = performance.now();
     activationWorker.postMessage({
-      multicoreComputation: true,
+      multicoreComputation: false,
       populationIndex,
       memberIndex,
       member,
@@ -109,7 +109,7 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
       frameCount,
       sampleRate
     });
-*/
+
     spawnMultipleNetworkActivationWebWorkers({
       populationIndex,
       memberIndex,
@@ -166,6 +166,7 @@ function spawnMultipleNetworkActivationWebWorkers( data ) {
 function getTaskKey( data ) {
   return `${data.populationIndex}-${data.memberIndex}`;
 }
+let multiworkerMemberOutputs;
 function storeSubResult(e) {
   console.log("got sub results: ", e.data);
   subResults[getTaskKey(e.data)][e.data.slice] = e.data.memberOutputs;
@@ -174,9 +175,12 @@ function storeSubResult(e) {
     // combine memberOutputs in subResults to one memberOutputs object
     const memberOutputs = getCombinedMemberOutputsFromSubResults(
       subResults[getTaskKey(e.data)] );
+
+    multiworkerMemberOutputs = memberOutputs;
+
     // then, add the combined results to applicatino state
-    _dispatch( receiveOutputsForMember(
-      memberOutputs, e.data.populationIndex, e.data.memberIndex) );
+    // _dispatch( receiveOutputsForMember(
+    //   memberOutputs, e.data.populationIndex, e.data.memberIndex) );
   }
 }
 function getCombinedMemberOutputsFromSubResults( subResults ) {
@@ -218,15 +222,40 @@ function concatenateTypedArrays(resultConstructor, arrays) {
  * We receive this message when the activation worker (and its subworkers)
  * has completed activating the network for all (frameCount) samples
  */
-// activationWorker.onmessage = function(e) {
-//   // Activation complete, let's dispatch an action with the member outputs
-//   const receiveFromActivationWorker = performance.now();
-//   console.log(`%c Posting result from activation worker took ${receiveFromActivationWorker - e.data.startSending} milliseconds`, 'color: deep-purple');
-//   console.log(`%c Receiving data from activation worker took ${receiveFromActivationWorker - postToActivationWorker} milliseconds`, 'color: deep-purple');
-//   console.log('Message received from worker: ', e.data );
-//   _dispatch( receiveOutputsForMember(
-//     e.data.memberOutputs, e.data.populationIndex, e.data.memberIndex) );
-// }
+let singleworkerMemberOutputs;
+activationWorker.onmessage = function(e) {
+  // Activation complete, let's dispatch an action with the member outputs
+  const receiveFromActivationWorker = performance.now();
+  console.log(`%c Posting result from activation worker took ${receiveFromActivationWorker - e.data.startSending} milliseconds`, 'color: deep-purple');
+  console.log(`%c Receiving data from activation worker took ${receiveFromActivationWorker - postToActivationWorker} milliseconds`, 'color: deep-purple');
+  console.log('Message received from worker: ', e.data );
+
+  singleworkerMemberOutputs = e.data.memberOutputs;
+
+  if( multiworkerMemberOutputs ) {
+    verifyMemberOutputsAreSame( singleworkerMemberOutputs, multiworkerMemberOutputs );
+  }
+
+  // _dispatch( receiveOutputsForMember(
+  //   e.data.memberOutputs, e.data.populationIndex, e.data.memberIndex) );
+}
+
+function verifyMemberOutputsAreSame( singleworkerMemberOutputs, multiworkerMemberOutputs ) {
+  let areAllSamplesSame = true;
+  let samplesCompared = 0;
+  [...singleworkerMemberOutputs.entries()].forEach( oneOutputEntry => {
+    oneOutputEntry[1].samples.forEach( (oneSingleWorkerSampleValue, sampleIndex) => {
+      const correspondingMultiworkerSampleValue =
+        multiworkerMemberOutputs.get(oneOutputEntry[0]).samples[sampleIndex];
+      if( oneSingleWorkerSampleValue !== correspondingMultiworkerSampleValue ) {
+        areAllSamplesSame = false;
+      }
+      samplesCompared++;
+    });
+  });
+  console.log("samplesCompared: ", samplesCompared);
+  console.log("areAllSamplesSame: ", areAllSamplesSame);
+}
 
 export function getAudioBuffersForMember(
   memberOutputs,
