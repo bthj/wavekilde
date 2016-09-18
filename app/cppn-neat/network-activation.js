@@ -63,18 +63,30 @@ class Activator {
 
   getOutputSignals( inputSignals, outputIndexes, memberCPPN ) {
     const startOutputSignalsCalculation = performance.now();
-    const outputSignals = new Array(inputSignals.length);
+
+    // const outputSignals = new Array(inputSignals.length);
+
+    const outputSignals = {};
+    outputIndexes.forEach( outputIndex => {
+      outputSignals[outputIndex] = new Float32Array( inputSignals.length );
+    });
+
     inputSignals.forEach( (signalSet, sampleIndex) => {
       memberCPPN.clearSignals();
       memberCPPN.setInputSignals( signalSet );
       memberCPPN.recursiveActivation();
 
-      const outputSlice = new Map(
-        outputIndexes.map( oneOutputIndex =>
-          [oneOutputIndex, memberCPPN.getOutputSignal(oneOutputIndex)]
-        )
-      );
-      outputSignals[ sampleIndex ] = outputSlice;
+      // const outputSlice = new Map(
+      //   outputIndexes.map( oneOutputIndex =>
+      //     [oneOutputIndex, memberCPPN.getOutputSignal(oneOutputIndex)]
+      //   )
+      // );
+      // outputSignals[ sampleIndex ] = outputSlice;
+
+      outputIndexes.forEach( outputIndex => {
+        outputSignals[outputIndex][sampleIndex] = memberCPPN.getOutputSignal(outputIndex);
+      });
+
     });
     const endOutputSignalsCalculation = performance.now();
     console.log(`%c OutputSignalsCalculation took ${endOutputSignalsCalculation - startOutputSignalsCalculation} milliseconds`,'color:orange');
@@ -187,7 +199,7 @@ class Activator {
 
       outputsToActivate.forEach( function(oneOutput) {
         memberOutputs.set( oneOutput.index, {
-          samples: new Float32Array(this.sampleCountToActivate), // typed array for samples; results in faster transfers via message passing from worker
+          samples: undefined, // new Float32Array(this.sampleCountToActivate), // typed array for samples; results in faster transfers via message passing from worker
           frequency: oneOutput.frequency,
           inputPeriods: oneOutput.frequency *
             (this.sampleCount / this.sampleRate)
@@ -238,11 +250,17 @@ class Activator {
             inputSignals, outputIndexs, memberCPPN );
 
           const startApplyMemberOutputs = performance.now();
-          outputSignals.forEach( (oneOutputSlice, sampleIndex) => {
-            for( let [outputIndex, outputValue] of oneOutputSlice ) {
-              memberOutputs.get( outputIndex ).samples[sampleIndex] = outputValue;
-            }
+
+          // outputSignals.forEach( (oneOutputSlice, sampleIndex) => {
+          //   for( let [outputIndex, outputValue] of oneOutputSlice ) {
+          //     memberOutputs.get( outputIndex ).samples[sampleIndex] = outputValue;
+          //   }
+          // });
+
+          outputIndexs.forEach( outputIndex => {
+            memberOutputs.get( outputIndex ).samples = outputSignals[outputIndex];
           });
+
           const endApplyMemberOutputs = performance.now();
           console.log(`%c Applying member outputs for one input period took ${endApplyMemberOutputs - startApplyMemberOutputs} milliseconds`,'color:orange');
 
