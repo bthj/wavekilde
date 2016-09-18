@@ -13,6 +13,8 @@ onmessage = function(e) {
       populationIndex: e.data.populationIndex,
       memberIndex: e.data.memberIndex,
       memberOutputs
-    });
+    }
+    , [...memberOutputs.values()].map( oneOutput => oneOutput.samples.buffer ) /*<- transfer list*/
+    );
   });
 }

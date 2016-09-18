@@ -63,7 +63,7 @@ class Activator {
 
   getOutputSignals( inputSignals, outputIndexes, memberCPPN ) {
     const startOutputSignalsCalculation = performance.now();
-    const outputSignals = new Array(inputSignals.length); // TODO: typed array?
+    const outputSignals = new Array(inputSignals.length);
     inputSignals.forEach( (signalSet, sampleIndex) => {
       memberCPPN.clearSignals();
       memberCPPN.setInputSignals( signalSet );
@@ -187,7 +187,7 @@ class Activator {
 
       outputsToActivate.forEach( function(oneOutput) {
         memberOutputs.set( oneOutput.index, {
-          samples: new Float32Array(this.sampleCount), // typed array for samples; results in faster transfers via message passing from worker
+          samples: new Float32Array(this.sampleCountToActivate), // typed array for samples; results in faster transfers via message passing from worker
           frequency: oneOutput.frequency,
           inputPeriods: oneOutput.frequency *
             (this.sampleCount / this.sampleRate)

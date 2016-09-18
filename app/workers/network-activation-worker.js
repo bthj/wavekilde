@@ -23,7 +23,7 @@ onmessage = function(e) {
 
   if( e.data.multicoreComputation ) {
 
-    // TODO: split .frameCount into subsets and hand over to subworkers:
+    // split .frameCount into subsets and hand over to subworkers:
     pendingWorkers[getTaskKey(e)] = numWorkers;
     subResults[getTaskKey(e)] = {};
     const samplesPerWorker = Math.round( e.data.frameCount / numWorkers );

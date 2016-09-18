@@ -8,8 +8,9 @@ import {
 import Activator from '../cppn-neat/network-activation';
 import Renderer from '../cppn-neat/network-rendering';
 
-const ActivationWorker = require("worker!../workers/network-activation-worker.js");
-const activationWorker = new ActivationWorker();
+// const ActivationWorker = require("worker!../workers/network-activation-worker.js");
+// const activationWorker = new ActivationWorker();
+const ActivationSubWorker = require("worker!../workers/network-activation-sub-worker.js");
 
 /**
  * Get audio from a CPPN network by activating its outputs
@@ -97,9 +98,19 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
     if( ! window.Worker ) {
       alert("Please use a modern web browser that supports Web Workers");
     }
+/*
     postToActivationWorker = performance.now();
     activationWorker.postMessage({
       multicoreComputation: true,
+      populationIndex,
+      memberIndex,
+      member,
+      currentPatch,
+      frameCount,
+      sampleRate
+    });
+*/
+    spawnMultipleNetworkActivationWebWorkers({
       populationIndex,
       memberIndex,
       member,
@@ -121,20 +132,101 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
 */
   }
 }
+const numWorkers = 4;
+const pendingWorkers = {};
+const subResults = {};
+function spawnMultipleNetworkActivationWebWorkers( data ) {
+  pendingWorkers[getTaskKey(data)] = numWorkers;
+  subResults[getTaskKey(data)] = {};
+  const samplesPerWorker = Math.round( data.frameCount / numWorkers );
+  for( let i=0; i < numWorkers; i+=1 ) {
+    const sampleOffset = i * samplesPerWorker;
+    let sampleCountToActivate;
+    if( sampleOffset + samplesPerWorker > data.frameCount ) {
+      sampleCountToActivate = data.frameCount - sampleOffset;
+    } else {
+      sampleCountToActivate = samplesPerWorker;
+    }
+
+    const activationSubWorker = new ActivationSubWorker();
+    activationSubWorker.postMessage({
+      slice: i,
+      populationIndex: data.populationIndex,
+      memberIndex: data.memberIndex,
+      frameCount: data.frameCount,
+      sampleRate: data.sampleRate,
+      member: data.member,
+      currentPatch: data.currentPatch,
+      sampleCountToActivate,
+      sampleOffset
+    });
+    activationSubWorker.onmessage = storeSubResult;
+  }
+}
+function getTaskKey( data ) {
+  return `${data.populationIndex}-${data.memberIndex}`;
+}
+function storeSubResult(e) {
+  console.log("got sub results: ", e.data);
+  subResults[getTaskKey(e.data)][e.data.slice] = e.data.memberOutputs;
+  pendingWorkers[getTaskKey(e.data)] -= 1;
+  if( pendingWorkers[getTaskKey(e.data)] <= 0 ) {
+    // combine memberOutputs in subResults to one memberOutputs object
+    const memberOutputs = getCombinedMemberOutputsFromSubResults(
+      subResults[getTaskKey(e.data)] );
+    // then, add the combined results to applicatino state
+    _dispatch( receiveOutputsForMember(
+      memberOutputs, e.data.populationIndex, e.data.memberIndex) );
+  }
+}
+function getCombinedMemberOutputsFromSubResults( subResults ) {
+
+  // let's initialize a Map for memberOutputs
+  // using the first sub result as a template
+  const memberOutputs = new Map( subResults[0].entries() );
+
+  // then combine samples from each sub results for each nework output
+  const subResultsSliceIndexes = Object.keys(subResults).sort();
+  [...memberOutputs.keys()].forEach( outputIndex => {
+    const sampleArraysForOneOutput = [];
+    subResultsSliceIndexes.forEach( oneSliceIndex => {
+      sampleArraysForOneOutput.push( subResults[oneSliceIndex].get(outputIndex).samples )
+    });
+    const samplesForOneOutput = concatenateTypedArrays(
+      Float32Array, sampleArraysForOneOutput );
+    memberOutputs.get(outputIndex).samples = samplesForOneOutput;
+  });
+  return memberOutputs;
+}
+
+// concatenation of typed arrays - based on http://www.2ality.com/2015/10/concatenating-typed-arrays.html
+function concatenateTypedArrays(resultConstructor, arrays) {
+    let totalLength = 0;
+    for (let arr of arrays) {
+        totalLength += arr.length;
+    }
+    let result = new resultConstructor(totalLength);
+    let offset = 0;
+    for (let arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+    return result;
+}
 
 /**
  * We receive this message when the activation worker (and its subworkers)
  * has completed activating the network for all (frameCount) samples
  */
-activationWorker.onmessage = function(e) {
-  // Activation complete, let's dispatch an action with the member outputs
-  const receiveFromActivationWorker = performance.now();
-  console.log(`%c Posting result from activation worker took ${receiveFromActivationWorker - e.data.startSending} milliseconds`, 'color: deep-purple');
-  console.log(`%c Receiving data from activation worker took ${receiveFromActivationWorker - postToActivationWorker} milliseconds`, 'color: deep-purple');
-  console.log('Message received from worker: ', e.data );
-  _dispatch( receiveOutputsForMember(
-    e.data.memberOutputs, e.data.populationIndex, e.data.memberIndex) );
-}
+// activationWorker.onmessage = function(e) {
+//   // Activation complete, let's dispatch an action with the member outputs
+//   const receiveFromActivationWorker = performance.now();
+//   console.log(`%c Posting result from activation worker took ${receiveFromActivationWorker - e.data.startSending} milliseconds`, 'color: deep-purple');
+//   console.log(`%c Receiving data from activation worker took ${receiveFromActivationWorker - postToActivationWorker} milliseconds`, 'color: deep-purple');
+//   console.log('Message received from worker: ', e.data );
+//   _dispatch( receiveOutputsForMember(
+//     e.data.memberOutputs, e.data.populationIndex, e.data.memberIndex) );
+// }
 
 export function getAudioBuffersForMember(
   memberOutputs,
