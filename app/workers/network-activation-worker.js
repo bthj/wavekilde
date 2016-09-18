@@ -1,8 +1,15 @@
 import Activator from '../cppn-neat/network-activation';
 
 const ActivationSubWorker = require("worker!./network-activation-sub-worker.js");
-// const ActivationSubWorker = require("worker?inline!./network-activation-sub-worker.js");
 
+/**
+ * This worker currently not in use.
+ * Initially used for single threaded network activation *or* (optionally via message parameter)
+ * multi threaded activation by spawning multiple sub-workers;
+ * unfortunately, Chrome / Safari don't currently support spawner sub-workers
+ * from a web worker - Firefox does - so the rendering action getOutputsForMember
+ * spawns multiple workers directly, using network-activation-sub-worker.js
+ */
 
 const numWorkers = 4;
 const pendingWorkers = {};

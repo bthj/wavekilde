@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
 import { isAudible, remapNumberToRange } from '../../util/range';
 
-// import update from 'react-addons-update';
 import IndividualGrid from '../views/individual-grid';
 
 import { Waveform, LineChart } from 'react-d3-components';
@@ -91,23 +90,6 @@ class IndividualContainer extends Component {
   componentDidMount() {
 
     if( this.isMemberSelectedFromPopulation() ) {
-
-      // if( ! this.getRenderedSoundBuffersFromApplicationState() ) {
-      //   // rendered audio buffers not available in application state,
-      //   // for the individual indexed to via props to this component,
-      //   // so we'll trigger network activation and rendering:
-      //   // // TODO: message that rendering process has started.
-      //   this.props.getAudioBuffersFromMember(
-      //     this.props.populationIndex, this.props.memberIndex
-      //     /*, noteDeltas, reverse */
-      //   ).then( () => {
-      //     if( ! this.state.soundBufferPlayedAutomatically ) {
-      //       // will play if buffer is available and then set
-      //       // this.state.soundBufferPlayedAutomatically = true, otherwise do nothing:
-      //       this.playAudioRendering( 0 );
-      //     }
-      //   });
-      // }
 
       if( ! this.isMemberOutputAvailable() ) {
 
@@ -289,6 +271,6 @@ function mapStateToProps( state ) {
 }
 
 export default connect(mapStateToProps, {
-  // getAudioBuffersFromMember
-  getOutputsForMember, getAudioBuffersForMember
+  getOutputsForMember,
+  getAudioBuffersForMember
 })(IndividualContainer);

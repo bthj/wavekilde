@@ -1,5 +1,3 @@
-// import hamsters from 'webhamsters/src/hamsters';
-// import Parallel from 'paralleljs';
 import neatjs from 'neatjs';
 import cppnjs from 'cppnjs';
 
@@ -24,26 +22,6 @@ class Activator {
     sampleOffset ? this.sampleOffset = sampleOffset : this.sampleOffset = 0;
   }
 
-  // activate( member, neatjs ) {
-  //   var params = {'array':[0,1,2,3,4,5,6,7,8,9], 'member':member};
-  //   hamsters.run(params, function() {
-  //
-  //     var newCPPN = new neatjs.neatGenome("asdf",
-  //     params.member.offspring.nodes,
-  //     params.member.offspring.connections,
-  //     params.member.offspring.inputNodeCount,
-  //     params.member.offspring.outputNodeCount );
-  //
-  //     const arr = params.array;
-  //     arr.forEach(function(item) {
-  //       rtn.data.push( newCPPN );
-  //     });
-  //   }, function(output) {
-  //     console.log("output: ", output);
-  //     return output
-  //   }, 1, false);
-  // }
-
   getInputSignals( inputPeriods, variationOnPeriods ) {
     const startInputSignalsCalculation = performance.now();
     let inputSignals = Array(this.sampleCountToActivate).fill(0).map((v,c) => {
@@ -64,10 +42,9 @@ class Activator {
   getOutputSignals( inputSignals, outputIndexes, memberCPPN ) {
     const startOutputSignalsCalculation = performance.now();
 
-    // const outputSignals = new Array(inputSignals.length);
-
     const outputSignals = {};
     outputIndexes.forEach( outputIndex => {
+      // typed array for samples; results in faster transfers via message passing from worker
       outputSignals[outputIndex] = new Float32Array( inputSignals.length );
     });
 
@@ -75,13 +52,6 @@ class Activator {
       memberCPPN.clearSignals();
       memberCPPN.setInputSignals( signalSet );
       memberCPPN.recursiveActivation();
-
-      // const outputSlice = new Map(
-      //   outputIndexes.map( oneOutputIndex =>
-      //     [oneOutputIndex, memberCPPN.getOutputSignal(oneOutputIndex)]
-      //   )
-      // );
-      // outputSignals[ sampleIndex ] = outputSlice;
 
       outputIndexes.forEach( outputIndex => {
         outputSignals[outputIndex][sampleIndex] = memberCPPN.getOutputSignal(outputIndex);
@@ -113,74 +83,6 @@ class Activator {
 
       const memberOutputs = new Map();
 
-/*
-      var p = new Parallel([1, 2, 3], {
-        // evalPath: 'paralleljs/lib/eval.js',
-        // env: {
-        //   member: "member"
-        // }
-      });
-      // var neatGenome = neatjs.neatGenome;
-      // console.log("neatGenome: ", neatGenome);
-
-      p
-      // .require( { fn: worksGreat, name: 'worksGreat'} )
-      .spawn(function( data ) {
-        var newCPPN = "worksGreat";
-        // new neatGenome("asdf",
-        //   member.offspring.nodes,
-        //   member.offspring.connections,
-        //   member.offspring.inputNodeCount,
-        //   member.offspring.outputNodeCount );
-        return data.map(function(number) {
-          return newCPPN;
-        });
-      }).then(function(data) {
-        console.log(`%c newCPPNdata: ${data}`, 'color:red');
-      });
-*/
-
-      // console.log("member: ", JSON.stringify(
-      //   member,
-      //   null,
-      //   '\t'
-      // ));
-
-      // const newCPPN = new neatjs.neatGenome("asdf",
-      // member.offspring.nodes,
-      // member.offspring.connections,
-      // member.offspring.inputNodeCount,
-      // member.offspring.outputNodeCount );
-
-      // console.log("newCPPN: ", newCPPN);
-
-      // var op = function(i) { //Perform this function on every element
-      //
-      //   const newCPPN = new neatjs.neatGenome("asdf",
-      //   member.offspring.nodes,
-      //   member.offspring.connections,
-      //   member.offspring.inputNodeCount,
-      //   member.offspring.outputNodeCount );
-      //
-      //   return arguments[0] * 2 + newCPPN;
-      // };
-      // var options = {
-      //   operator: op, //Operation to perform on every element
-      //   array: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], //Input array
-      //   startIndex: 0, //Optional Starting index for loop default of 0
-      //   limit: null, //Optional Loop limit, eg. 4 to only compute elements 0-3 default of input array length
-      //   dataType: 'Int32', //Optional dataType param default null
-      //   incrementBy: 1, //Optional Increment amount per loop default of 1
-      //   threads: 1 //Optional number of threads to execute across for parallel computing default of 1
-      // };
-      // hamsters.tools.loop(options, function(output) {
-      //   console.log(output);
-      // });
-
-      // const hamsterResult = this.activate( member );
-      // console.log("hamsterResult: ", hamsterResult);
-
-
       let outputsToActivate;
       if( patch ) {
         outputsToActivate = this.getOutputsToActivateFromPatch( patch );
@@ -199,7 +101,7 @@ class Activator {
 
       outputsToActivate.forEach( function(oneOutput) {
         memberOutputs.set( oneOutput.index, {
-          samples: undefined, // new Float32Array(this.sampleCountToActivate), // typed array for samples; results in faster transfers via message passing from worker
+          samples: undefined,
           frequency: oneOutput.frequency,
           inputPeriods: oneOutput.frequency *
             (this.sampleCount / this.sampleRate)
@@ -212,30 +114,6 @@ class Activator {
 
       const networkActivationStart = performance.now();
       uniqueInputPeriods.forEach(function( inputPeriods ) {
-
-/*
-        for ( let c=0; c < this.sampleCount; c++ ) {
-*/
-          // if( c % 10000 == 0 ) console.log(`activating network for sample ${c} and input period ${inputPeriods}`);
-/*
-          let rangeFraction = c / (this.sampleCount-1);
-
-          let mainInputSignal = this.lerp( -1, 1, rangeFraction );
-
-          if( variationOnPeriods ) {
-            var extraInput = Math.sin( inputPeriods * mainInputSignal );
-          } else {
-            var extraInput = Math.sin( inputPeriods * Math.abs(mainInputSignal) );
-          }
-*/
-/*
-          let inputSignals = [ extraInput, mainInputSignal ];
-
-          memberCPPN.clearSignals();
-          memberCPPN.setInputSignals( inputSignals );
-
-          memberCPPN.recursiveActivation();
-*/
 
           // collect output indexes associated with the input periods value being activated for
           const outputIndexs = [];
@@ -251,12 +129,6 @@ class Activator {
 
           const startApplyMemberOutputs = performance.now();
 
-          // outputSignals.forEach( (oneOutputSlice, sampleIndex) => {
-          //   for( let [outputIndex, outputValue] of oneOutputSlice ) {
-          //     memberOutputs.get( outputIndex ).samples[sampleIndex] = outputValue;
-          //   }
-          // });
-
           outputIndexs.forEach( outputIndex => {
             memberOutputs.get( outputIndex ).samples = outputSignals[outputIndex];
           });
@@ -264,16 +136,6 @@ class Activator {
           const endApplyMemberOutputs = performance.now();
           console.log(`%c Applying member outputs for one input period took ${endApplyMemberOutputs - startApplyMemberOutputs} milliseconds`,'color:orange');
 
-          // outputsToActivate.forEach( function(oneOutput) {
-          //   if( inputPeriods == memberOutputs[ oneOutput.index ].inputPeriods ) {
-          //
-          //     memberOutputs[ oneOutput.index ].samples[c] =
-          //       memberCPPN.getOutputSignal(oneOutput.index);
-          //   }
-          // }.bind(this));
-/*
-        }
-*/
       }.bind(this));
 
       const networkActivationEnd = performance.now();

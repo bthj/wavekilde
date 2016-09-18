@@ -25,47 +25,8 @@ const ActivationSubWorker = require("worker!../workers/network-activation-sub-wo
  * @return {Array}                  Audio buffer(s).
  */
 
-/*
-export function getAudioBuffersFromMember(
-    populationIndex, memberIndex, noteDeltas, reverse ) {
-
-  return function(dispatch, getState) {
-    const member = getState().evolution.populations[populationIndex][memberIndex];
-    const {frameCount, duration} = getState().rendering;
-    const {sampleRate} = getState().rendering.audioCtx;
-    const currentPatch = getState().patching.patches.get(
-      getState().patching.currentPatchKey );
-
-    const activator = new Activator( frameCount, sampleRate );
-    const renderer = new Renderer( frameCount, sampleRate, duration );
-
-    dispatch( requestMemberOutputsFromActivator(populationIndex, memberIndex) );
-
-    // Get member outputs from Activator,
-    // providing it sampleCount, sampleRate and
-    // outputsToActivate (deduced from synth-patch) from application state.
-    // Return a promise to wait for activation of network outputs
-    return activator.activateMember(member, currentPatch).then( memberOutputs => {
-
-      // update app state with results of network activation
-      dispatch( receiveOutputsForMember( memberOutputs, populationIndex, memberIndex) );
-
-      // Then render an audio graph with Renderer,
-      // providing it with an audio graph patch from application state.
-      // Wait for a promise to be fulfilled with the audio buffer of a rendered audio graph.
-      return renderer
-        .renderNetworksOutputSamplesAsAudioBuffer( memberOutputs, currentPatch )
-        .then( audioBuffer => {
-          dispatch( receiveAudioBufferForMember(
-            audioBuffer, populationIndex, memberIndex ) );
-        });
-    });
-  }
-}
-*/
 
 let _dispatch = undefined;
-
 /**
  * Kinda hackish way to retain a reference to the redux store dispatch function,
  * for use when a callback comes in from a web worker
@@ -107,18 +68,6 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
       frameCount,
       sampleRate
     });
-/*
-    const activator = new Activator( frameCount, sampleRate );
-    // Get member outputs from Activator,
-    // providing it sampleCount, sampleRate and
-    // outputsToActivate (deduced from synth-patch) from application state.
-    // Return a promise to wait for activation of network outputs
-    return activator.activateMember(member, currentPatch).then( memberOutputs => {
-
-      // update app state with results of network activation
-      dispatch( receiveOutputsForMember( memberOutputs, populationIndex, memberIndex) );
-    });
-*/
   }
 }
 
