@@ -6,7 +6,7 @@ import {
   RECEIVE_AUDIO_BUFFER_FOR_MEMBER
 } from '../actions/types';
 
-const duration = 10;  // in seconds
+const duration = 60;  // in seconds
 const audioCtx = new( window.AudioContext || window.webkitAudioContext )();
 
 const INITIAL_STATE = {

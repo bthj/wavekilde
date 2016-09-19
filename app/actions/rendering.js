@@ -4,6 +4,8 @@ import {
   REQUEST_AUDIO_BUFFER_FOR_MEMBER,
   RECEIVE_AUDIO_BUFFER_FOR_MEMBER
 } from './types';
+import { numWorkers } from '../util/range';
+import { concatenateTypedArrays } from '../util/arrays';
 
 import Activator from '../cppn-neat/network-activation';
 import Renderer from '../cppn-neat/network-rendering';
@@ -71,7 +73,6 @@ export function getOutputsForMember( populationIndex, memberIndex ) {
   }
 }
 
-const numWorkers = window.navigator.hardwareConcurrency || 4;
 const pendingWorkers = {};
 const subResults = {};
 
@@ -111,7 +112,7 @@ function spawnMultipleNetworkActivationWebWorkers( data ) {
  * their results are combined and dispatched to the application state.
  */
 function storeSubResult(e) {
-  console.log("got sub results: ", e.data);
+
   subResults[getTaskKey(e.data)][e.data.slice] = e.data.memberOutputs;
   pendingWorkers[getTaskKey(e.data)] -= 1;
   if( pendingWorkers[getTaskKey(e.data)] <= 0 ) {
@@ -151,21 +152,6 @@ function getCombinedMemberOutputsFromSubResults( subResults ) {
     memberOutputs.get(outputIndex).samples = samplesForOneOutput;
   });
   return memberOutputs;
-}
-
-// concatenation of typed arrays - based on http://www.2ality.com/2015/10/concatenating-typed-arrays.html
-function concatenateTypedArrays(resultConstructor, arrays) {
-    let totalLength = 0;
-    for (let arr of arrays) {
-        totalLength += arr.length;
-    }
-    let result = new resultConstructor(totalLength);
-    let offset = 0;
-    for (let arr of arrays) {
-        result.set(arr, offset);
-        offset += arr.length;
-    }
-    return result;
 }
 
 
