@@ -48,10 +48,14 @@ class Activator {
       outputSignals[outputIndex] = new Float32Array( inputSignals.length );
     });
 
+    let recursiveActivationTime = 0;
     inputSignals.forEach( (signalSet, sampleIndex) => {
       memberCPPN.clearSignals();
       memberCPPN.setInputSignals( signalSet );
+      const startRecursiveActivation = performance.now();
       memberCPPN.recursiveActivation();
+      const endRecursiveActivation = performance.now();
+      recursiveActivationTime += endRecursiveActivation - startRecursiveActivation;
 
       outputIndexes.forEach( outputIndex => {
         outputSignals[outputIndex][sampleIndex] = memberCPPN.getOutputSignal(outputIndex);
@@ -59,7 +63,12 @@ class Activator {
 
     });
     const endOutputSignalsCalculation = performance.now();
-    console.log(`%c OutputSignalsCalculation took ${endOutputSignalsCalculation - startOutputSignalsCalculation} milliseconds`,'color:orange');
+    const outputSignalsCalculationTime = endOutputSignalsCalculation - startOutputSignalsCalculation
+    console.log(`%c OutputSignalsCalculation took
+      ${outputSignalsCalculationTime} milliseconds,
+      of which recursive activation took ${recursiveActivationTime},
+      ${(recursiveActivationTime/outputSignalsCalculationTime)*100}%`,
+      'color:orange');
     return outputSignals;
   }
 
