@@ -7,4 +7,4 @@ export function isAudible( frequency ) {
 }
 
 // TODO: questionably the right location:
-export const numWorkers = window.navigator.hardwareConcurrency || 4;
+export const numWorkers = navigator.hardwareConcurrency || 4;

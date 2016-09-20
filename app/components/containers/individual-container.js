@@ -66,8 +66,6 @@ class IndividualContainer extends Component {
 
   componentDidUpdate( prevProps ) {
 
-    console.log("prevProps: ", prevProps);
-
     if( this.isMemberOutputAvailable() ) {
       console.log("this.isMemberOutputAvailable(): ", this.isMemberOutputAvailable());
       // TODO: message that network activation has completed

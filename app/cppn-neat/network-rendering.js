@@ -2,6 +2,7 @@ import { isAudible, remapNumberToRange, numWorkers } from '../util/range';
 import { concatenateTypedArrays } from '../util/arrays';
 
 const GainValuesPerAudioWavesWorker = require("worker!../workers/gain-values-per-audio-wave-worker.js");
+const RemapControlArrayToValueCurveRangeWorker = require("worker!../workers/remap-control-array-to-value-curve-range-worker.js");
 
 
 /**
@@ -96,123 +97,116 @@ class Renderer {
 
         const startApplyingGainValues = performance.now();
 
-        let audioSourceGains = [];
-        console.log('Applying gain values to each gain node...');
-        gainValues.forEach( (oneGainControlArray, gainIndex) => {
+        this.getAudioSourceGains( gainValues, offlineCtx )
+        .then( audioSourceGains => {
+
+          const endApplyingGainValues = performance.now();
+          console.log(`%c Applying gain values took ${endApplyingGainValues - startApplyingGainValues} milliseconds`, 'color:darkorange');
+          console.log('Done calculating gain values.');
+
+          const startConnectingAudioGraph = performance.now();
+
+          // connect each audio source to a gain node,
+          audioSources.forEach(
+            (audioSource, index) => audioSource.connect( audioSourceGains[index] ) );
+
+          // instantiate a merger; mixer
+          let mergerNode = offlineCtx.createChannelMerger( audioSources.length );
+
+          // connect the output of each audio source gain to the mixer
+          audioSourceGains.forEach(
+            (audioGain, index) => audioGain.connect( mergerNode, 0, index ) );
+
+          // connect the mixer to the output device
+          mergerNode.connect( offlineCtx.destination );
+
+          const endConnectingAudioGraph = performance.now();
+          console.log(`%c Connecting audio graph took ${endConnectingAudioGraph - startConnectingAudioGraph} milliseconds`, 'color:darkorange');
+
+          // start all the audio sources
+          let currentTime = offlineCtx.currentTime;
+          audioSources.forEach( audioSource => audioSource.start(currentTime) );
+
+
+    /*    AM, FM, subtractive synthesis, distortion - TODO: to be assignable to waves in UI
+
+          // create a "Voltage Controlled" Amplifier
           let VCA = offlineCtx.createGain();
-          VCA.gain.setValueCurveAtTime(new Float32Array( oneGainControlArray.map( oneGainValue => {
-            return remapNumberToRange( oneGainValue, -1, 1, 0, 1 );
-          })), offlineCtx.currentTime, this.duration);
-          audioSourceGains.push( VCA );
-        });
+          // set the amplifier's initial gain value
+          VCA.gain.value = .5;
 
-        const endApplyingGainValues = performance.now();
-        console.log(`%c Applying gain values took ${endApplyingGainValues - startApplyingGainValues} milliseconds`, 'color:darkorange');
-        console.log('Done calculating gain values.');
+          let biquadFilter = offlineCtx.createBiquadFilter();
+          biquadFilter.type = 'lowpass'; // moar types at https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
+          biquadFilter.frequency.value = 1000;
 
+          let distortion = offlineCtx.createWaveShaper();
 
-        const startConnectingAudioGraph = performance.now();
+          source.connect( distortion );
+          distortion.connect( biquadFilter );
+          biquadFilter.connect( VCA );
+          // connect the Amplifier to the
+          // destination so we can hear the sound
+          VCA.connect(offlineCtx.destination);
 
-        // connect each audio source to a gain node,
-        audioSources.forEach(
-          (audioSource, index) => audioSource.connect( audioSourceGains[index] ) );
-
-        // instantiate a merger; mixer
-        let mergerNode = offlineCtx.createChannelMerger( audioSources.length );
-
-        // connect the output of each audio source gain to the mixer
-        audioSourceGains.forEach(
-          (audioGain, index) => audioGain.connect( mergerNode, 0, index ) );
-
-        // connect the mixer to the output device
-        mergerNode.connect( offlineCtx.destination );
-
-        const endConnectingAudioGraph = performance.now();
-        console.log(`%c Connecting audio graph took ${endConnectingAudioGraph - startConnectingAudioGraph} milliseconds`, 'color:darkorange');
-
-        // start all the audio sources
-        let currentTime = offlineCtx.currentTime;
-        audioSources.forEach( audioSource => audioSource.start(currentTime) );
-
-
-  /*    AM, FM, subtractive synthesis, distortion - TODO: to be assignable to waves in UI
-
-        // create a "Voltage Controlled" Amplifier
-        let VCA = offlineCtx.createGain();
-        // set the amplifier's initial gain value
-        VCA.gain.value = .5;
-
-        let biquadFilter = offlineCtx.createBiquadFilter();
-        biquadFilter.type = 'lowpass'; // moar types at https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode
-        biquadFilter.frequency.value = 1000;
-
-        let distortion = offlineCtx.createWaveShaper();
-
-        source.connect( distortion );
-        distortion.connect( biquadFilter );
-        biquadFilter.connect( VCA );
-        // connect the Amplifier to the
-        // destination so we can hear the sound
-        VCA.connect(offlineCtx.destination);
-
-        // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
-        // start controlling the amplifier's gain:  AM
-        VCA.gain.setValueCurveAtTime(
-          new Float32Array( this.state.memberOutputs.get(2).samples.map(function(oneSample) {
-            return remapNumberToRange(oneSample, -1, 1, 0, 1);
-          }.bind(this)) ),
-          offlineCtx.currentTime, this.state.duration
-        );
-        // use a control signal to mess with the detuning of the audio source:  FM
-        source.detune.setValueCurveAtTime(
-          new Float32Array( this.state.memberOutputs.get(3).samples.map(function(oneSample) {
-            return remapNumberToRange(oneSample, -1, 1, -1000, 1000);
-          }.bind(this)) ),
-          offlineCtx.currentTime, this.state.duration*1.1
-          // multiplier to have the k-rate (detune) param cover the entire playback duration
-          // ...with limited understanding of how those k-rate params actually work:
-          // https://developer.mozilla.org/en-US/docs/Web/API/AudioParam#k-rate
-        );
-        // assign a sample array from one neural network output to sweep the filter:  subtractive synthesis
-        biquadFilter.frequency.setValueCurveAtTime(
-          new Float32Array(this.state.memberOutputs.get(4).samples.map(function(oneSample) {
-            return remapNumberToRange(oneSample, -1, 1, 0, 2000);
-          }.bind(this)) ),
-          offlineCtx.currentTime, this.state.duration
-        ); // TODO: use network outputs to control filter's gain or Q ?
-        // distortion
-        distortion.curve = new Float32Array(this.state.memberOutputs.get(5).samples);
+          // TODO: use scheduling in the future, shared with the audio sources's .start(...) ?
+          // start controlling the amplifier's gain:  AM
+          VCA.gain.setValueCurveAtTime(
+            new Float32Array( this.state.memberOutputs.get(2).samples.map(function(oneSample) {
+              return remapNumberToRange(oneSample, -1, 1, 0, 1);
+            }.bind(this)) ),
+            offlineCtx.currentTime, this.state.duration
+          );
+          // use a control signal to mess with the detuning of the audio source:  FM
+          source.detune.setValueCurveAtTime(
+            new Float32Array( this.state.memberOutputs.get(3).samples.map(function(oneSample) {
+              return remapNumberToRange(oneSample, -1, 1, -1000, 1000);
+            }.bind(this)) ),
+            offlineCtx.currentTime, this.state.duration*1.1
+            // multiplier to have the k-rate (detune) param cover the entire playback duration
+            // ...with limited understanding of how those k-rate params actually work:
+            // https://developer.mozilla.org/en-US/docs/Web/API/AudioParam#k-rate
+          );
+          // assign a sample array from one neural network output to sweep the filter:  subtractive synthesis
+          biquadFilter.frequency.setValueCurveAtTime(
+            new Float32Array(this.state.memberOutputs.get(4).samples.map(function(oneSample) {
+              return remapNumberToRange(oneSample, -1, 1, 0, 2000);
+            }.bind(this)) ),
+            offlineCtx.currentTime, this.state.duration
+          ); // TODO: use network outputs to control filter's gain or Q ?
+          // distortion
+          distortion.curve = new Float32Array(this.state.memberOutputs.get(5).samples);
 
 
-        // start the source playing
-        source.start();
-  */
+          // start the source playing
+          source.start();
+    */
 
-        console.log('Done wiring up audio graph, will now render.');
+          console.log('Done wiring up audio graph, will now render.');
 
-        const startRenderAudioGraph = performance.now();
+          const startRenderAudioGraph = performance.now();
 
-        // Offline rendering of the audio graph to a reusable buffer
-        offlineCtx.startRendering().then(function( renderedBuffer ) {
-          console.log('Rendering completed successfully');
+          // Offline rendering of the audio graph to a reusable buffer
+          offlineCtx.startRendering().then(function( renderedBuffer ) {
+            console.log('Rendering completed successfully');
 
-          const endRenderAudioGraph = performance.now();
-          console.log(`%c Rendering audio graph took ${endRenderAudioGraph - startRenderAudioGraph} milliseconds`, 'color:darkorange');
+            const endRenderAudioGraph = performance.now();
+            console.log(`%c Rendering audio graph took ${endRenderAudioGraph - startRenderAudioGraph} milliseconds`, 'color:darkorange');
 
-          const networkIndividualSound = this.ensureBufferStartsAndEndsAtZero(
-            renderedBuffer );
+            const networkIndividualSound = this.ensureBufferStartsAndEndsAtZero(
+              renderedBuffer );
 
-          resolve( networkIndividualSound );
+            resolve( networkIndividualSound );
 
-        }.bind(this)).catch(function( err ) {
-          console.log('Rendering failed: ' + err);
+          }.bind(this)).catch(function( err ) {
+            console.log('Rendering failed: ' + err);
 
-          reject( "Not able to render audio buffer from member outputs with provided audio graph patch: "
-            + err );
-        });
+            reject( "Not able to render audio buffer from member outputs with provided audio graph patch: "
+              + err );
+          });
+
+        }); // gain value curve remapping promise
 
       }); // gain calculation promise
-
 
 
       // TODO: ...then, dynamic rendering pipeline according to patch
@@ -266,9 +260,10 @@ class Renderer {
   }
 
 
+
   spawnMultipleGainValuesPerAudioWaveWorkers( audioWaveCount, controlWave ) {
     const chunk = Math.round( controlWave.length / numWorkers );
-    // let totalSliceLengths = 0;
+
     const gainValuePromises = [];
     for( let i=0, j=controlWave.length; i<j; i+=chunk ) {
       const controlWaveSlice = controlWave.slice( i, i+chunk );
@@ -277,11 +272,7 @@ class Renderer {
         this.spawnOneGainValuesPerAudioWaveWorker(
           audioWaveCount, controlWaveSlice )
       );
-      // totalSliceLengths += controlWaveSlice.length;
     }
-    // console.log("are control wave slice lengths equal to original control wave length? ",
-    //   controlWave.length === totalSliceLengths );
-
     return Promise.all( gainValuePromises ).then( arrayOfSubGainValues => {
 
       return this.getCombinedGainValuesFromSubResults( arrayOfSubGainValues );
@@ -294,7 +285,7 @@ class Renderer {
       gainValuesPerAudioWaveWorker.postMessage({
         audioWaveCount,
         controlWave
-      });
+      }, [controlWave.buffer] );
       gainValuesPerAudioWaveWorker.onmessage = (e) => {
 
         resolve( e.data.gainValues );
@@ -330,50 +321,44 @@ class Renderer {
     return gainValues;
   }
 
-  getGainValuesPerAudioWave( audioWaveCount, controlWave ) {
-    const oneWaveFraction = 2 / audioWaveCount; // 2 as -1 to 1 spans two integers
-    const oneWaveMiddleFraction = oneWaveFraction / 2;
-    const waveSpectrumSpans =
-      this.getSpectrumSpansForAudioWaves( audioWaveCount, oneWaveFraction, oneWaveMiddleFraction );
-    const gainValues = new Map();
-    [...Array(audioWaveCount).keys()].forEach( audioWaveNr => {
-      gainValues.set( audioWaveNr, [] );
-    });
-    controlWave.forEach( oneSample => {
-      for( let [waveNr, spans] of waveSpectrumSpans.entries() ) {
-        let spectrum = waveSpectrumSpans.get(waveNr);
-        if( spectrum.start < oneSample && oneSample < spectrum.end ) {
-          let gain = 1 - Math.abs(spectrum.middle - oneSample) / oneWaveFraction;
-          gainValues.get( waveNr ).push( gain );
-        } else {
-          gainValues.get( waveNr ).push( 0 );
-        }
-      }
-    });
-    return gainValues;
-  }
 
-  getSpectrumSpansForAudioWaves( audioWaveCount, oneWaveFraction, oneWaveMiddleFraction ) {
-    const waveSpectrumSpans = new Map();
-    for( let i=0; i < audioWaveCount; i++ ) {
-      let spectrumStart = i * oneWaveFraction - 1 // -1 as we're working with the range -1 to 1
-      let spectrumStartFading =
-        spectrumStart - ( i ? oneWaveMiddleFraction : 0 ); // to start fading in the adjacent span
-      let spectrumMiddle = spectrumStart + oneWaveMiddleFraction;
-      let spectrumEnd = spectrumStart + oneWaveFraction
-      let spectrumEndFading =
-        spectrumEnd + ( (i+1) < audioWaveCount ? oneWaveMiddleFraction : 0 ); // to fade into the adjacent span
-      waveSpectrumSpans.set( i, {
-        start: spectrumStartFading,
-        middle: spectrumMiddle,
-        end: spectrumEndFading
+
+  getAudioSourceGains( gainValues, audioCtx ) {
+
+    const gainValueCurvePromises = [];
+    gainValues.forEach( (oneGainControlArray, gainIndex) => {
+
+      gainValueCurvePromises.push(
+        this.getGainControlArrayRemappedToValueCurveRange( oneGainControlArray )
+      );
+    });
+    return Promise.all( gainValueCurvePromises ).then( gainValueCurveArrays => {
+      const audioSourceGains = [];
+      gainValueCurveArrays.forEach( oneValueCurveArray => {
+        let VCA = audioCtx.createGain();
+        VCA.gain.setValueCurveAtTime(
+          oneValueCurveArray, audioCtx.currentTime, this.duration );
+        audioSourceGains.push( VCA );
       });
-    }
-    // console.log(`oneWaveFraction: ${oneWaveFraction}, oneWaveMiddleFraction: ${oneWaveMiddleFraction}`);
-    // console.log("waveSpectrumSpans");console.log(waveSpectrumSpans);
-    return waveSpectrumSpans;
+      return audioSourceGains;
+    });
   }
 
+  getGainControlArrayRemappedToValueCurveRange( gainControlArray ) {
+
+    return new Promise(function(resolve, reject) {
+      const remapControlArrayToValueCurveRangeWorker =
+        new RemapControlArrayToValueCurveRangeWorker();
+
+      remapControlArrayToValueCurveRangeWorker.postMessage({
+        gainControlArray
+      }, [gainControlArray.buffer] );
+
+      remapControlArrayToValueCurveRangeWorker.onmessage = (e) => {
+        resolve( e.data.valueCurve );
+      };
+    });
+  }
 
 }
 
