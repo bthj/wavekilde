@@ -34,13 +34,17 @@ class IndividualContainer extends Component {
   isMemberOutputAvailable() {
     return this.getMemberOutputsFromApplicationState() ? true : false;
   }
+  isNetworkActivating() {
+    return this.props.rendering.renderingMemberOutputs.getIn(
+      [this.props.populationIndex, this.props.memberIndex] );
+  }
 
   isAudioBufferAvailable() {
     return this.getRenderedSoundBuffersFromApplicationState() ? true : false;
   }
   isAudioBuffersRendering() {
     return this.props.rendering.renderingMemberSounds.getIn(
-      [this.props.populationIndex, this.props.memberIndex]);
+      [this.props.populationIndex, this.props.memberIndex] );
   }
 
   isMemberSelectedFromPopulation() {
@@ -89,7 +93,7 @@ class IndividualContainer extends Component {
 
     if( this.isMemberSelectedFromPopulation() ) {
 
-      if( ! this.isMemberOutputAvailable() ) {
+      if( ! this.isMemberOutputAvailable() && ! this.isNetworkActivating() ) {
 
         this.startMemberOutputsRendering();
 
