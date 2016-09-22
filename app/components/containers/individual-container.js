@@ -2,6 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
 import { isAudible, remapNumberToRange } from '../../util/range';
+import { playAudioBuffer } from '../../util/play';
 
 import IndividualGrid from '../views/individual-grid';
 
@@ -171,26 +172,11 @@ class IndividualContainer extends Component {
       }
   }
 
-  /**
-   * Plays a sound buffer for the current member of the current population.
-   * @param  {Integer} notesFromBase What note to play, as deviation from the
-   *                                base note, where e.g. 0 refers to the base note,
-   *                                1 one note higher than the base note and
-   *                                -2 two notes lower than the base note.
-   */
   playAudioRendering( notesFromBase ) {
     const individualSoundBuffers = this.getRenderedSoundBuffersFromApplicationState();
     if( individualSoundBuffers ) {
-      console.log(`playAudioRendering, buffer length: ${individualSoundBuffers[ notesFromBase ].length}`);
-      const soundToPlay = this.props.rendering.audioCtx.createBufferSource();
-      soundToPlay.buffer = individualSoundBuffers[ notesFromBase ];
-      soundToPlay.connect( this.props.rendering.audioCtx.destination );
-      soundToPlay.start();
-
-      this.setState({ soundBufferPlayedAutomatically: true });
+      playAudioBuffer( notesFromBase, individualSoundBuffers, this.props.rendering.audioCtx );
     }
-    // this.mixGainsStart = null;
-    // window.requestAnimationFrame( this.showMixGains );
   }
 
 

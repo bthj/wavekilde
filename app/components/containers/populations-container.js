@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { connect } from 'react-redux';
 import { setCurrentPopulation, setCurrentMember } from '../../actions/evolution';
 import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
+import { playAudioBuffer } from '../../util/play';
 
 import PopulationGrid from '../views/population-grid';
 import IndividualContainer from './individual-container';
@@ -51,13 +52,17 @@ class PopulationsContainer extends Component{
     const currentPopulation = this.getCurrentPopulation();
     return currentPopulation ? currentPopulation.map( (oneMember, memberIndex) => {
       return(
-        <div style={{padding:"1em"}}>
+        <div style={{padding:"1em"}} key={memberIndex}>
           {this.isMemberOutputAvailable( memberIndex ) ?
             <span> [Network activated] </span> : ''
           }
           {this.isAudioBufferAvailable( memberIndex ) ?
-            <span> [Audio available] </span> : ''
+            <span>
+               [Audio available]
+               <button onClick={this.playMemberAudio.bind(this, 0, memberIndex )} key="play">Play</button>
+             </span> : ''
           }
+
           <Link to="/individual" onClick={() => this.props.setCurrentMember(memberIndex)}>
             {oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction},</span>)}
           </Link>
@@ -110,6 +115,11 @@ class PopulationsContainer extends Component{
 
   getCurrentPopulation() {
     return this.props.populations[this.props.currentPopulationIndex];
+  }
+
+  playMemberAudio( notesFromBase, memberIndex ) {
+    const audioBuffer = this.getRenderedSoundBuffersFromApplicationState( memberIndex );
+    playAudioBuffer( notesFromBase, audioBuffer, this.props.rendering.audioCtx );
   }
 }
 
