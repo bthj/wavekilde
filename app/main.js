@@ -8,6 +8,10 @@ import createLogger from 'redux-logger';
 import Router from './router';
 import reducers from './reducers';
 
+import 'loaders.css/loaders.min.css';
+import './main.css';
+
+
 const loggerMiddleware = createLogger();
 
 const createStoreWithMiddleware = applyMiddleware(

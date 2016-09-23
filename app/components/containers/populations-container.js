@@ -4,10 +4,14 @@ import { connect } from 'react-redux';
 import { setCurrentPopulation, setCurrentMember } from '../../actions/evolution';
 import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
 import { playAudioBuffer } from '../../util/play';
+import { POPULATION_SIZE } from '../../cppn-neat/evolution-constants';
 
 import PopulationGrid from '../views/population-grid';
 import IndividualContainer from './individual-container';
 
+import { Loader } from 'react-loaders';
+
+const loaders = ["line-scale", "line-scale-party", "line-scale-pulse-out", "line-scale-pulse-out-rapid"];
 
 class PopulationsContainer extends Component{
 
@@ -15,6 +19,11 @@ class PopulationsContainer extends Component{
 
     if( this.props.currentPopulationIndex < 0 ) {
       this.props.setCurrentPopulation ( 0 );
+    }
+
+    this.loaderTypes = new Array( POPULATION_SIZE );
+    for( let i=0; i<POPULATION_SIZE; i++ ) {
+      this.loaderTypes[i] = loaders[Math.floor(Math.random() * loaders.length)];
     }
   }
 
@@ -35,7 +44,6 @@ class PopulationsContainer extends Component{
 
   render() {
     console.log( "this.props.populations", this.props.populations );
-
     return(
       <div>
         TODO: display tiles for each member of population
@@ -51,12 +59,15 @@ class PopulationsContainer extends Component{
   getPopulationNodes() {
     const currentPopulation = this.getCurrentPopulation();
     return currentPopulation ? currentPopulation.map( (oneMember, memberIndex) => {
+      const memberOutputsAvailable = this.isMemberOutputAvailable( memberIndex );
+      const audioBufferAvailable = this.isAudioBufferAvailable( memberIndex );
+
       return(
         <div style={{padding:"1em"}} key={memberIndex}>
-          {this.isMemberOutputAvailable( memberIndex ) ?
+          {memberOutputsAvailable ?
             <span> [Network activated] </span> : ''
           }
-          {this.isAudioBufferAvailable( memberIndex ) ?
+          {audioBufferAvailable ?
             <span>
                [Audio available]
                <button onClick={this.playMemberAudio.bind(this, 0, memberIndex )} key="play">Play</button>
@@ -64,7 +75,11 @@ class PopulationsContainer extends Component{
           }
 
           <Link to="/individual" onClick={() => this.props.setCurrentMember(memberIndex)}>
-            {oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction},</span>)}
+          {memberOutputsAvailable && audioBufferAvailable ?
+            oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction},</span>)
+            : <Loader type={this.loaderTypes[memberIndex]} active="true" />
+          }
+
           </Link>
         </div>
       );
