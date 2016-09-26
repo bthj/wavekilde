@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
-import { setCurrentPopulation, setCurrentMember } from '../../actions/evolution';
+import { setCurrentPopulation, setCurrentMember, evolveCurrentPopulation } from '../../actions/evolution';
 import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
 import { playAudioBuffer } from '../../util/play';
 import { POPULATION_SIZE } from '../../cppn-neat/evolution-constants';
@@ -14,6 +14,14 @@ import { Loader } from 'react-loaders';
 const loaders = ["line-scale", "line-scale-party", "line-scale-pulse-out", "line-scale-pulse-out-rapid"];
 
 class PopulationsContainer extends Component{
+
+  constructor( props ) {
+    super( props );
+
+    this.state = {
+      memberSelection: new Array( POPULATION_SIZE )
+    }
+  }
 
   componentDidMount() {
 
@@ -46,12 +54,17 @@ class PopulationsContainer extends Component{
     console.log( "this.props.populations", this.props.populations );
     return(
       <div>
-        TODO: display tiles for each member of population
-              with navigation to <Link to="/individual">individual detail</Link>
-              and ability to select individuals as parents for evolution.
-        TODO: button to evolve next generation.
 
+        <h2>Population {this.props.currentPopulationIndex}</h2>
+
+        <input type="button" className="btn-evolve" value="Evolve -->"
+          onClick={() => this.evolveNextGeneration()} />
+        <br />
         {this.getPopulationNodes()}
+        <br />
+        <input type="button" className="btn-evolve" value="Evolve -->"
+          onClick={() => this.evolveNextGeneration()} />
+
       </div>
     );
   }
@@ -63,7 +76,7 @@ class PopulationsContainer extends Component{
       const audioBufferAvailable = this.isAudioBufferAvailable( memberIndex );
 
       return(
-        <div style={{padding:"1em"}} key={memberIndex}>
+        <div style={{padding:"1em"}} key={memberIndex} className="member-container">
           {memberOutputsAvailable ?
             <span> [Network activated] </span> : ''
           }
@@ -74,16 +87,35 @@ class PopulationsContainer extends Component{
              </span> : ''
           }
 
-          <Link to="/individual" onClick={() => this.props.setCurrentMember(memberIndex)}>
+
           {memberOutputsAvailable && audioBufferAvailable ?
-            oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction},</span>)
+            <div>
+              <input type="checkbox"
+                name={`member-${memberIndex}`} id={`member-${memberIndex}`}
+                checked={this.isMemberSelected(memberIndex)}
+                onChange={this.toggleMemberIndexInSelectedState.bind(this, memberIndex)} />
+              <label for={`member-${memberIndex}`}>Individual {memberIndex}</label>
+              <br />
+              <Link to="/individual" onClick={() => this.props.setCurrentMember(memberIndex)}>
+                {oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction}, </span>)}
+              </Link>
+            </div>
             : <Loader type={this.loaderTypes[memberIndex]} active="true" />
           }
-
-          </Link>
         </div>
       );
     }) : '';
+  }
+
+  toggleMemberIndexInSelectedState( memberIndex ) {
+    this.state.memberSelection[ memberIndex ] =
+      this.isMemberSelected(memberIndex) ? -1 : memberIndex;
+    this.setState({ memberSelection: this.state.memberSelection }, () => {
+      console.log("this.state.memberSelection: ", this.state.memberSelection);
+    });
+  }
+  isMemberSelected( memberIndex ) {
+    return this.state.memberSelection[ memberIndex ] === memberIndex;
   }
 
 
@@ -136,6 +168,14 @@ class PopulationsContainer extends Component{
     const audioBuffer = this.getRenderedSoundBuffersFromApplicationState( memberIndex );
     playAudioBuffer( notesFromBase, audioBuffer, this.props.rendering.audioCtx );
   }
+
+
+  evolveNextGeneration() {
+    const parentIndexes =
+    this.state.memberSelection.filter( memberIndexSelected => memberIndexSelected > -1 );
+    this.props.evolveCurrentPopulation( parentIndexes );
+    this.props.setCurrentPopulation( this.props.currentPopulationIndex + 1 );
+  }
 }
 
 function mapStateToProps( state ) {
@@ -146,6 +186,6 @@ function mapStateToProps( state ) {
 }
 
 export default connect(mapStateToProps, {
-  setCurrentPopulation, setCurrentMember,
+  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation,
   getOutputsForMember, getAudioBuffersForMember
 })(PopulationsContainer);

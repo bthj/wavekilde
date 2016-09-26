@@ -47,7 +47,7 @@ function getPopulationsCoveringIndex( index, populations ) {
 function evolveNewPopulation( parentIndexes, population ) {
   const parents = [];
   parentIndexes.forEach( oneParentIndex => {
-    parents.push( population[oneParentIndex] );
+    parents.push( population[oneParentIndex].offspring );
   });
   const newPopulation = evolver.evolveNextGeneration( parents );
   return newPopulation;

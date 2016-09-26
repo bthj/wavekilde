@@ -8,3 +8,11 @@
 .loader-active {
   display: block;
 }
+
+
+.member-container {
+  float: left;
+  width: 180px;
+  height: 150px;
+  overflow: scroll;;
+}
