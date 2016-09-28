@@ -100,7 +100,7 @@ class PopulationsContainer extends Component{
                 {oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction}, </span>)}
               </Link>
             </div>
-            : <Loader type={this.loaderTypes[memberIndex]} active="true" />
+            : <Loader type={this.loaderTypes[memberIndex]} active={true} />
           }
         </div>
       );

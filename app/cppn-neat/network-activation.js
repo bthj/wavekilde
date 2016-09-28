@@ -1,5 +1,6 @@
 import neatjs from 'neatjs';
 import cppnjs from 'cppnjs';
+import { setActivationFunctions } from './activation-functions';
 
 /**
  * Activates outputs of the provided network
@@ -20,7 +21,10 @@ class Activator {
       this.sampleCountToActivate = sampleCount;
     }
     sampleOffset ? this.sampleOffset = sampleOffset : this.sampleOffset = 0;
+
+    setActivationFunctions( cppnjs );
   }
+
 
   getInputSignals( inputPeriods, variationOnPeriods ) {
     const startInputSignalsCalculation = performance.now();

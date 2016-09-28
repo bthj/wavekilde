@@ -1,5 +1,6 @@
 import neatjs from 'neatjs';
 import cppnjs from 'cppnjs';
+import { setActivationFunctions } from './activation-functions';
 
 import {
   CONNECTION_PROPORTION,
@@ -18,6 +19,8 @@ class Evolver {
 
   constructor() {
 
+    setActivationFunctions( cppnjs );
+
     this.iecGenerator = this._instantiateIECGenerator();
 
     /*
@@ -31,6 +34,7 @@ class Evolver {
     }
     return instance;
   }
+
 
   /**
    * Create a first population
@@ -142,5 +146,6 @@ class Evolver {
     );
   }
 }
+
 
 export default Evolver;
