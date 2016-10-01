@@ -27,6 +27,7 @@
     "webpack": "^1.13.0"
   },
   "dependencies": {
+    "babel-core": "^6.16.0",
     "immutable": "^3.8.1",
     "loaders.css": "^0.1.2",
     "neatjs": "^0.3.1",
