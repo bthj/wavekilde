@@ -1,7 +1,8 @@
 import {
   POPULATION_SET_CURRENT,
   POPULATION_EVOLVE,
-  MEMBER_SET_CURRENT
+  MEMBER_SET_CURRENT,
+  LINEAGE_SET_KEY
 } from '../actions/types';
 import Evolver from '../cppn-neat/network-evolution';
 
@@ -74,6 +75,10 @@ export default function( state = INITIAL_STATE, action ) {
     case MEMBER_SET_CURRENT:
       return {...state,
         currentMemberIndex: action.memberIndex
+      };
+    case LINEAGE_SET_KEY:
+      return {...state,
+        lineageKey: action.key
       };
     default:
       return state;

@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
-import { setCurrentPopulation, setCurrentMember, evolveCurrentPopulation } from '../../actions/evolution';
+import {
+  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey
+} from '../../actions/evolution';
 import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
 import { playAudioBuffer } from '../../util/play';
 import { POPULATION_SIZE } from '../../cppn-neat/evolution-constants';
@@ -27,6 +29,7 @@ class PopulationsContainer extends Component{
 
     if( this.props.currentPopulationIndex < 0 ) {
       this.props.setCurrentPopulation ( 0 );
+      this.props.setLineageKey( new Date().toString() );
     }
 
     this.loaderTypes = new Array( POPULATION_SIZE );
@@ -83,7 +86,7 @@ class PopulationsContainer extends Component{
           {audioBufferAvailable ?
             <span>
                [Audio available]
-               <button onClick={this.playMemberAudio.bind(this, 0, memberIndex )} key="play">Play</button>
+               <button onClick={this.playMemberAudio.bind( this, 0, memberIndex )}>Play</button>
              </span> : ''
           }
 
@@ -94,10 +97,11 @@ class PopulationsContainer extends Component{
                 name={`member-${memberIndex}`} id={`member-${memberIndex}`}
                 checked={this.isMemberSelected(memberIndex)}
                 onChange={this.toggleMemberIndexInSelectedState.bind(this, memberIndex)} />
-              <label for={`member-${memberIndex}`}>Individual {memberIndex}</label>
+              <label htmlFor={`member-${memberIndex}`}>Individual {memberIndex}</label>
               <br />
               <Link to="/individual" onClick={() => this.props.setCurrentMember(memberIndex)}>
-                {oneMember.offspring.nodes.map( oneNode => <span>{oneNode.activationFunction}, </span>)}
+                {oneMember.offspring.nodes.map( (oneNode, nodeIndex) =>
+                  <span key={nodeIndex}>{oneNode.activationFunction}, </span>)}
               </Link>
             </div>
             : <Loader type={this.loaderTypes[memberIndex]} active={true} />
@@ -186,6 +190,6 @@ function mapStateToProps( state ) {
 }
 
 export default connect(mapStateToProps, {
-  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation,
+  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey,
   getOutputsForMember, getAudioBuffersForMember
 })(PopulationsContainer);
