@@ -56,7 +56,7 @@ class PopulationsContainer extends Component{
   }
 
   render() {
-    console.log( "this.props.populations", this.props.populations );
+    // console.log( "this.props.populations", this.props.populations );
     return(
       <div>
 
@@ -202,9 +202,10 @@ class PopulationsContainer extends Component{
       this.removeLastGeneration();
       this.props.removeRenderingsForPopulation( this.props.currentPopulationIndex + 1 );
     }
-    const parentIndexes =
-      this.state.memberSelection.filter( memberIndexSelected => memberIndexSelected > -1 );
+    const parentIndexes = this.state.memberSelection.filter(
+      memberIndexSelected => memberIndexSelected > -1 );
     this.props.evolveCurrentPopulation( parentIndexes );
+    this.setState({ memberSelection: new Array( POPULATION_SIZE ) });
     this.props.setCurrentPopulation( this.props.currentPopulationIndex + 1 );
   }
 

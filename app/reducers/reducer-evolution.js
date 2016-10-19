@@ -60,7 +60,9 @@ export default function( state = INITIAL_STATE, action ) {
     case POPULATION_SET_CURRENT: {
       const populations = getPopulationsCoveringIndex(
         action.populationIndex, state.populations );
-      db.saveLineage( state.lineageKey, populations );
+      if( 0 === action.populationIndex ) {
+        db.saveLineage( state.lineageKey, populations );
+      }
       return {...state,
         populations,
         currentPopulationIndex: action.populationIndex
