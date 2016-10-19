@@ -5,6 +5,7 @@ import {
   LINEAGE_SET_KEY
 } from '../actions/types';
 import Evolver from '../cppn-neat/network-evolution';
+import * as db from '../persistence/db-local';
 
 const INITIAL_STATE = {
   populations: [],
@@ -56,22 +57,28 @@ function evolveNewPopulation( parentIndexes, population ) {
 
 export default function( state = INITIAL_STATE, action ) {
   switch( action.type ) {
-    case POPULATION_SET_CURRENT:
+    case POPULATION_SET_CURRENT: {
+      const populations = getPopulationsCoveringIndex(
+        action.populationIndex, state.populations );
+      db.saveLineage( state.lineageKey, populations );
       return {...state,
-        populations: getPopulationsCoveringIndex(
-          action.populationIndex, state.populations ),
+        populations,
         currentPopulationIndex: action.populationIndex
       };
-    case POPULATION_EVOLVE:
+    }
+    case POPULATION_EVOLVE: {
+      const populations = [
+        ...state.populations,
+        evolveNewPopulation(
+          action.parentIdexes,
+          state.populations[state.currentPopulationIndex]
+        )
+      ];
+      db.saveLineage( state.lineageKey, populations );
       return {...state,
-        populations: [
-          ...state.populations,
-          evolveNewPopulation(
-            action.parentIdexes,
-            state.populations[state.currentPopulationIndex]
-          )
-        ]
+        populations
       };
+    }
     case MEMBER_SET_CURRENT:
       return {...state,
         currentMemberIndex: action.memberIndex

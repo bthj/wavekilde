@@ -28,8 +28,8 @@ class PopulationsContainer extends Component{
   componentDidMount() {
 
     if( this.props.currentPopulationIndex < 0 ) {
-      this.props.setCurrentPopulation ( 0 );
       this.props.setLineageKey( new Date().toString() );
+      this.props.setCurrentPopulation ( 0 );
     }
 
     this.loaderTypes = new Array( POPULATION_SIZE );

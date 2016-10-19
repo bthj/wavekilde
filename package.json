@@ -30,6 +30,7 @@
     "babel-core": "^6.16.0",
     "immutable": "^3.8.1",
     "loaders.css": "^0.1.2",
+    "localforage": "^1.4.3",
     "neatjs": "^0.3.1",
     "react": "^15.0.2",
     "react-addons-update": "^15.1.0",
