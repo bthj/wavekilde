@@ -2,7 +2,8 @@ import {
   REQUEST_OUTPUTS_FOR_MEMBER,
   RECEIVE_OUTPUTS_FOR_MEMBER,
   REQUEST_AUDIO_BUFFER_FOR_MEMBER,
-  RECEIVE_AUDIO_BUFFER_FOR_MEMBER
+  RECEIVE_AUDIO_BUFFER_FOR_MEMBER,
+  REMOVE_RENDERINGS_FOR_POPULATION
 } from './types';
 import { numWorkers } from '../util/range';
 import { concatenateTypedArrays } from '../util/arrays';
@@ -212,4 +213,13 @@ function receiveAudioBufferForMember( audioBuffer, populationIndex, memberIndex 
     populationIndex,
     memberIndex
   };
+}
+
+
+
+export function removeRenderingsForPopulation( populationIndex ) {
+  return {
+    type: REMOVE_RENDERINGS_FOR_POPULATION,
+    populationIndex
+  }
 }

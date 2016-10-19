@@ -3,7 +3,8 @@ import {
   REQUEST_OUTPUTS_FOR_MEMBER,
   RECEIVE_OUTPUTS_FOR_MEMBER,
   REQUEST_AUDIO_BUFFER_FOR_MEMBER,
-  RECEIVE_AUDIO_BUFFER_FOR_MEMBER
+  RECEIVE_AUDIO_BUFFER_FOR_MEMBER,
+  REMOVE_RENDERINGS_FOR_POPULATION
 } from '../actions/types';
 
 const duration = 1;  // in seconds
@@ -65,6 +66,11 @@ export default function( state = INITIAL_STATE, action ) {
           [action.populationIndex, action.memberIndex], false
         )
       };
+    case REMOVE_RENDERINGS_FOR_POPULATION:
+      return {...state,
+        memberOutputs: state.memberOutputs.removeIn( [action.populationIndex] ),
+        memberRenderedSounds: state.memberRenderedSounds.removeIn( [action.populationIndex] )
+      }
     default:
       return state;
   }

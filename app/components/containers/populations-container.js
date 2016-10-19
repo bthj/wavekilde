@@ -4,7 +4,9 @@ import { connect } from 'react-redux';
 import {
   setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey
 } from '../../actions/evolution';
-import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
+import {
+  getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation
+} from '../../actions/rendering';
 import { playAudioBuffer } from '../../util/play';
 import { POPULATION_SIZE } from '../../cppn-neat/evolution-constants';
 
@@ -60,13 +62,33 @@ class PopulationsContainer extends Component{
 
         <h2>Population {this.props.currentPopulationIndex}</h2>
 
-        <input type="button" className="btn-evolve" value="Evolve -->"
-          onClick={() => this.evolveNextGeneration()} />
+        <div>
+          {this.props.currentPopulationIndex > 0 ?
+            <input type="button" className="btn-evolve" value="<-- Previous Generation"
+              onClick={() => this.backOneGeneration()} /> : ''
+          }
+          {this.doesGenerationAfterCurrentExist() ?
+            <input type="button" className="btn-evolve" value="Next Generation -->"
+              onClick={() => this.forwardOneGeneration()} /> : ''
+          }
+          <input type="button" className="btn-evolve" value="Evolve -->"
+            onClick={() => this.evolveNextGeneration()} />
+        </div>
         <br />
         {this.getPopulationNodes()}
-        <br />
-        <input type="button" className="btn-evolve" value="Evolve -->"
-          onClick={() => this.evolveNextGeneration()} />
+        <br style={{clear:"both"}} />
+        <div>
+          {this.props.currentPopulationIndex > 0 ?
+            <input type="button" className="btn-evolve" value="<-- Previous Generation"
+              onClick={() => this.backOneGeneration()} /> : ''
+          }
+          {this.doesGenerationAfterCurrentExist() ?
+            <input type="button" className="btn-evolve" value="Next Generation -->"
+              onClick={() => this.forwardOneGeneration()} /> : ''
+          }
+          <input type="button" className="btn-evolve" value="Evolve -->"
+            onClick={() => this.evolveNextGeneration()} />
+        </div>
 
       </div>
     );
@@ -174,11 +196,36 @@ class PopulationsContainer extends Component{
   }
 
 
+
   evolveNextGeneration() {
+    if( this.doesGenerationAfterCurrentExist() ) {
+      this.removeLastGeneration();
+      this.props.removeRenderingsForPopulation( this.props.currentPopulationIndex + 1 );
+    }
     const parentIndexes =
-    this.state.memberSelection.filter( memberIndexSelected => memberIndexSelected > -1 );
+      this.state.memberSelection.filter( memberIndexSelected => memberIndexSelected > -1 );
     this.props.evolveCurrentPopulation( parentIndexes );
     this.props.setCurrentPopulation( this.props.currentPopulationIndex + 1 );
+  }
+
+  forwardOneGeneration() {
+    if( this.doesGenerationAfterCurrentExist() ) {
+      this.props.setCurrentPopulation ( this.props.currentPopulationIndex + 1 );
+    }
+  }
+
+  backOneGeneration() {
+    if( this.props.currentPopulationIndex > 0 ) {
+      this.props.setCurrentPopulation ( this.props.currentPopulationIndex - 1 );
+    }
+  }
+
+  removeLastGeneration() {
+    this.props.populations.pop();
+  }
+
+  doesGenerationAfterCurrentExist() {
+    return this.props.populations.length > this.props.currentPopulationIndex + 1;
   }
 }
 
@@ -191,5 +238,5 @@ function mapStateToProps( state ) {
 
 export default connect(mapStateToProps, {
   setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey,
-  getOutputsForMember, getAudioBuffersForMember
+  getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation
 })(PopulationsContainer);
