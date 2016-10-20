@@ -11,3 +11,10 @@ export function saveLineage( key, populations ) {
     console.error( err );
   });
 }
+
+export function getAllLineageKeys() {
+  return lineageStore.keys().then( k => {
+    console.log("lineage keys: ", k);
+    return k;
+  } ).catch( err => { console.error(err); } );
+}

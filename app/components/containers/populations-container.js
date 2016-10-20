@@ -17,7 +17,7 @@ import { Loader } from 'react-loaders';
 
 const loaders = ["line-scale", "line-scale-party", "line-scale-pulse-out", "line-scale-pulse-out-rapid"];
 
-class PopulationsContainer extends Component{
+class PopulationsContainer extends Component {
 
   constructor( props ) {
     super( props );
