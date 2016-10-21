@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
 import {
-  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey
+  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey,
+  clearPopulations, loadLineageFromLocalDb
 } from '../../actions/evolution';
 import {
   getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation
@@ -27,12 +28,8 @@ class PopulationsContainer extends Component {
     }
   }
 
-  componentDidMount() {
-
-    if( this.props.currentPopulationIndex < 0 ) {
-      this.props.setLineageKey( new Date().toString() );
-      this.props.setCurrentPopulation ( 0 );
-    }
+  componentWillMount() {
+    this.props.clearPopulations(); // clear app state from populatins
 
     this.loaderTypes = new Array( POPULATION_SIZE );
     for( let i=0; i<POPULATION_SIZE; i++ ) {
@@ -40,17 +37,41 @@ class PopulationsContainer extends Component {
     }
   }
 
-  componentDidUpdate( prevProps ) {
+  componentDidMount() {
 
-    for( let i=0; i<this.getCurrentPopulation().length; i++ ) {
-      if( this.isNetworkActivating( i ) || this.isAudioBuffersRendering( i ) ) {
-        break;
-      } else if( ! this.isMemberOutputAvailable( i ) ) {
-        this.startMemberOutputsRendering( i );
-        break;
-      } else if( ! this.isAudioBufferAvailable( i ) ) {
-        this.startAudioBuffersRendering( i );
-        break;
+    console.log("this.props.params.lineageId: ", this.props.params.lineageId);
+    console.log("this.props.params.populationIndex: ", this.props.params.populationIndex);
+
+    if( this.props.params.lineageId ) {
+
+      this.props.loadLineageFromLocalDb( this.props.params.lineageId );
+      this.props.setLineageKey( this.props.params.lineageId );
+
+    } else {
+      if( this.props.currentPopulationIndex < 0 ) {
+        this.props.setLineageKey( new Date().toString() );
+        this.props.setCurrentPopulation ( 0 );
+      }
+    }
+
+  }
+
+  componentDidUpdate( prevProps ) {
+    console.log("this.getCurrentPopulation(): ", this.getCurrentPopulation() );
+    if( this.getCurrentPopulation() ) {
+      for( let i=0; i<this.getCurrentPopulation().length; i++ ) {
+        console.log("this.isNetworkActivating( i ): ", this.isNetworkActivating( i ));
+        console.log("this.isAudioBuffersRendering( i ): ", this.isAudioBuffersRendering( i ));
+        if( this.isNetworkActivating( i ) || this.isAudioBuffersRendering( i ) ) {
+          break;
+        } else if( ! this.isMemberOutputAvailable( i ) ) {
+          console.log(`this.startMemberOutputsRendering( ${i} )`);
+          this.startMemberOutputsRendering( i );
+          break;
+        } else if( ! this.isAudioBufferAvailable( i ) ) {
+          this.startAudioBuffersRendering( i );
+          break;
+        }
       }
     }
   }
@@ -239,5 +260,6 @@ function mapStateToProps( state ) {
 
 export default connect(mapStateToProps, {
   setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey,
-  getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation
+  getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation,
+  clearPopulations, loadLineageFromLocalDb
 })(PopulationsContainer);

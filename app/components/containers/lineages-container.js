@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router';
 import * as db from '../../persistence/db-local';
 import { Loader } from 'react-loaders';
 
@@ -21,7 +22,6 @@ export default class LineagesContainer extends Component {
   }
 
   render() {
-    console.log("this.state.lineageKeys: ", this.state.lineageKeys);
     return(
       <div>
         <h2>Breed new sounds</h2>
@@ -31,7 +31,11 @@ export default class LineagesContainer extends Component {
         <ul>
           {this.state.fetchingLineageKeys ?
             <Loader type="line-scale" active={true} />
-            : this.state.lineageKeys.map( oneLineage => <li>{oneLineage}</li> )
+            : this.state.lineageKeys.map( oneLineage =>
+              <li key={oneLineage}>
+                <Link to={`/populations/${oneLineage}`}>{oneLineage}</Link>
+              </li>
+            )
           }
         </ul>
       </div>

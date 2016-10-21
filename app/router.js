@@ -23,7 +23,7 @@ export default (
           </Route>
         </Route>
 
-        <Route path="populations">
+        <Route path="populations(/:lineageId)(/:populationIndex)">
           <Route component={PopulationLayout}>
             <IndexRoute component={PopulationsContainer} />
           </Route>

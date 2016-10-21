@@ -14,7 +14,12 @@ export function saveLineage( key, populations ) {
 
 export function getAllLineageKeys() {
   return lineageStore.keys().then( k => {
-    console.log("lineage keys: ", k);
     return k;
   } ).catch( err => { console.error(err); } );
+}
+
+export function getLineage( lineageId ) {
+  return lineageStore.getItem( lineageId ).then( lineage => {
+    return lineage;
+  }).catch( err => { console.error(err); } );
 }

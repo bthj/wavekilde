@@ -91,7 +91,7 @@ function spawnMultipleNetworkActivationWebWorkers( data ) {
     }
 
     const activationSubWorker = new ActivationSubWorker();
-    activationSubWorker.postMessage({
+    const messageToWorker = {
       slice: i,
       populationIndex: data.populationIndex,
       memberIndex: data.memberIndex,
@@ -101,8 +101,11 @@ function spawnMultipleNetworkActivationWebWorkers( data ) {
       currentPatch: data.currentPatch,
       sampleCountToActivate,
       sampleOffset
-    });
+    };
+    console.log("messageToWorker: ", messageToWorker);
+    activationSubWorker.postMessage( messageToWorker );
     activationSubWorker.onmessage = storeSubResult;
+    console.log("activationSubWorker: ", activationSubWorker);
   }
 }
 

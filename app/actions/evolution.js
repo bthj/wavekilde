@@ -2,8 +2,11 @@ import {
   POPULATION_SET_CURRENT,
   POPULATION_EVOLVE,
   MEMBER_SET_CURRENT,
-  LINEAGE_SET_KEY
+  LINEAGE_SET_KEY,
+  CLEAR_POPULATIONS,
+  SET_LINEAGE
 } from './types';
+import * as db from '../persistence/db-local';
 
 export function setCurrentPopulation( populationIndex ) {
   return {
@@ -30,5 +33,28 @@ export function setLineageKey( key ) {
   return {
     type: LINEAGE_SET_KEY,
     key
+  };
+}
+
+export function clearPopulations() {
+  return {
+    type: CLEAR_POPULATIONS
+  };
+}
+
+
+export function loadLineageFromLocalDb( lineageId ) {
+  return function( dispatch, getState ) {
+    db.getLineage( lineageId ).then( lineage => {
+      dispatch( receiveLineageFromLocalDb(lineage) );
+    });
+  }
+}
+
+function receiveLineageFromLocalDb( lineage ) {
+  console.log("receiveLineageFromLocalDb: ", lineage);
+  return {
+    type: SET_LINEAGE,
+    lineage
   };
 }

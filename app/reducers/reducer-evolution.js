@@ -2,7 +2,9 @@ import {
   POPULATION_SET_CURRENT,
   POPULATION_EVOLVE,
   MEMBER_SET_CURRENT,
-  LINEAGE_SET_KEY
+  LINEAGE_SET_KEY,
+  CLEAR_POPULATIONS,
+  SET_LINEAGE
 } from '../actions/types';
 import Evolver from '../cppn-neat/network-evolution';
 import * as db from '../persistence/db-local';
@@ -88,6 +90,15 @@ export default function( state = INITIAL_STATE, action ) {
     case LINEAGE_SET_KEY:
       return {...state,
         lineageKey: action.key
+      };
+    case CLEAR_POPULATIONS:
+      return {...state,
+        populations: []
+      };
+    case SET_LINEAGE:
+      return {...state,
+        populations: action.lineage,
+        currentPopulationIndex: 0
       };
     default:
       return state;
