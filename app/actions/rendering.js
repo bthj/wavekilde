@@ -11,7 +11,9 @@ import { concatenateTypedArrays } from '../util/arrays';
 import Activator from '../cppn-neat/network-activation';
 import Renderer from '../cppn-neat/network-rendering';
 
-const ActivationSubWorker = require("worker!../workers/network-activation-sub-worker.js");
+// const ActivationSubWorker = require("worker!../workers/network-activation-sub-worker.js");
+// inlining the worker seems necessary when visiting react-router path with /:parameters !?!!
+const ActivationSubWorker = require("worker?inline!../workers/network-activation-sub-worker.js");
 
 /**
  * Get audio from a CPPN network by activating its outputs
@@ -89,7 +91,6 @@ function spawnMultipleNetworkActivationWebWorkers( data ) {
     } else {
       sampleCountToActivate = samplesPerWorker;
     }
-
     const activationSubWorker = new ActivationSubWorker();
     const messageToWorker = {
       slice: i,
@@ -102,10 +103,8 @@ function spawnMultipleNetworkActivationWebWorkers( data ) {
       sampleCountToActivate,
       sampleOffset
     };
-    console.log("messageToWorker: ", messageToWorker);
     activationSubWorker.postMessage( messageToWorker );
     activationSubWorker.onmessage = storeSubResult;
-    console.log("activationSubWorker: ", activationSubWorker);
   }
 }
 

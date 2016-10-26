@@ -57,11 +57,16 @@ class PopulationsContainer extends Component {
   }
 
   componentDidUpdate( prevProps ) {
+
+    this.activateNetworksAndRenderAudio();
+  }
+
+  activateNetworksAndRenderAudio() {
     console.log("this.getCurrentPopulation(): ", this.getCurrentPopulation() );
     if( this.getCurrentPopulation() ) {
       for( let i=0; i<this.getCurrentPopulation().length; i++ ) {
-        console.log("this.isNetworkActivating( i ): ", this.isNetworkActivating( i ));
-        console.log("this.isAudioBuffersRendering( i ): ", this.isAudioBuffersRendering( i ));
+        console.log(`this.isNetworkActivating( ${i} ): `, this.isNetworkActivating( i ));
+        console.log(`this.isAudioBuffersRendering( ${i} ): `, this.isAudioBuffersRendering( i ));
         if( this.isNetworkActivating( i ) || this.isAudioBuffersRendering( i ) ) {
           break;
         } else if( ! this.isMemberOutputAvailable( i ) ) {
@@ -82,6 +87,9 @@ class PopulationsContainer extends Component {
       <div>
 
         <h2>Population {this.props.currentPopulationIndex}</h2>
+
+        <input type="button" value="activate networks and render audio"
+          onClick={() => this.activateNetworksAndRenderAudio()} />
 
         <div>
           {this.props.currentPopulationIndex > 0 ?
