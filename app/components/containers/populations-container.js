@@ -29,7 +29,6 @@ class PopulationsContainer extends Component {
   }
 
   componentWillMount() {
-    this.props.clearPopulations(); // clear app state from populatins
 
     this.loaderTypes = new Array( POPULATION_SIZE );
     for( let i=0; i<POPULATION_SIZE; i++ ) {
@@ -39,38 +38,40 @@ class PopulationsContainer extends Component {
 
   componentDidMount() {
 
-    console.log("this.props.params.lineageId: ", this.props.params.lineageId);
-    console.log("this.props.params.populationIndex: ", this.props.params.populationIndex);
-
-    if( this.props.params.lineageId ) {
-
-      this.props.loadLineageFromLocalDb( this.props.params.lineageId );
-      this.props.setLineageKey( this.props.params.lineageId );
-
-    } else {
-      if( this.props.currentPopulationIndex < 0 ) {
-        this.props.setLineageKey( new Date().toString() );
-        this.props.setCurrentPopulation ( 0 );
-      }
-    }
-
+    this.getOrCreateFamily();
   }
 
   componentDidUpdate( prevProps ) {
 
+    if( ! this.props.populations ) {
+      this.getOrCreateFamily();
+    }
+
     this.activateNetworksAndRenderAudio();
   }
 
+  getOrCreateFamily() {
+    const populationIndex = this.props.params.populationIndex ? this.props.params.populationIndex : 0;
+    if( this.props.params.lineageId ) {
+
+      this.props.loadLineageFromLocalDb( this.props.params.lineageId, populationIndex );
+      this.props.setLineageKey( this.props.params.lineageId );
+
+    } else {
+      if( this.props.currentPopulationIndex < 0 ) {
+        this.props.clearPopulations(); // clear app state from populatins
+        this.props.setLineageKey( new Date().toString() );
+        this.props.setCurrentPopulation ( populationIndex );
+      }
+    }
+  }
+
   activateNetworksAndRenderAudio() {
-    console.log("this.getCurrentPopulation(): ", this.getCurrentPopulation() );
     if( this.getCurrentPopulation() ) {
       for( let i=0; i<this.getCurrentPopulation().length; i++ ) {
-        console.log(`this.isNetworkActivating( ${i} ): `, this.isNetworkActivating( i ));
-        console.log(`this.isAudioBuffersRendering( ${i} ): `, this.isAudioBuffersRendering( i ));
         if( this.isNetworkActivating( i ) || this.isAudioBuffersRendering( i ) ) {
           break;
         } else if( ! this.isMemberOutputAvailable( i ) ) {
-          console.log(`this.startMemberOutputsRendering( ${i} )`);
           this.startMemberOutputsRendering( i );
           break;
         } else if( ! this.isAudioBufferAvailable( i ) ) {
@@ -88,36 +89,50 @@ class PopulationsContainer extends Component {
 
         <h2>Population {this.props.currentPopulationIndex}</h2>
 
-        <input type="button" value="activate networks and render audio"
-          onClick={() => this.activateNetworksAndRenderAudio()} />
+        {this.props.populations ?
+          <div>
 
-        <div>
-          {this.props.currentPopulationIndex > 0 ?
-            <input type="button" className="btn-evolve" value="<-- Previous Generation"
-              onClick={() => this.backOneGeneration()} /> : ''
-          }
-          {this.doesGenerationAfterCurrentExist() ?
-            <input type="button" className="btn-evolve" value="Next Generation -->"
-              onClick={() => this.forwardOneGeneration()} /> : ''
-          }
-          <input type="button" className="btn-evolve" value="Evolve -->"
-            onClick={() => this.evolveNextGeneration()} />
-        </div>
-        <br />
-        {this.getPopulationNodes()}
-        <br style={{clear:"both"}} />
-        <div>
-          {this.props.currentPopulationIndex > 0 ?
-            <input type="button" className="btn-evolve" value="<-- Previous Generation"
-              onClick={() => this.backOneGeneration()} /> : ''
-          }
-          {this.doesGenerationAfterCurrentExist() ?
-            <input type="button" className="btn-evolve" value="Next Generation -->"
-              onClick={() => this.forwardOneGeneration()} /> : ''
-          }
-          <input type="button" className="btn-evolve" value="Evolve -->"
-            onClick={() => this.evolveNextGeneration()} />
-        </div>
+            <input type="button" value="activate networks and render audio"
+              onClick={() => this.activateNetworksAndRenderAudio()} />
+
+            <div>
+              {this.props.currentPopulationIndex > 0 ?
+                <input type="button" className="btn-evolve" value="<-- Previous Generation"
+                  onClick={() => this.backOneGeneration()} /> : ''
+              }
+              {this.doesGenerationAfterCurrentExist() ?
+                <input type="button" className="btn-evolve" value="Next Generation -->"
+                  onClick={() => this.forwardOneGeneration()} /> : ''
+              }
+              <input type="button" className="btn-evolve" value="Evolve -->"
+                onClick={() => this.evolveNextGeneration()} />
+            </div>
+            <br />
+            {this.getPopulationNodes()}
+            <br style={{clear:"both"}} />
+            <div>
+              {this.props.currentPopulationIndex > 0 ?
+                <input type="button" className="btn-evolve" value="<-- Previous Generation"
+                  onClick={() => this.backOneGeneration()} /> : ''
+              }
+              {this.doesGenerationAfterCurrentExist() ?
+                <input type="button" className="btn-evolve" value="Next Generation -->"
+                  onClick={() => this.forwardOneGeneration()} /> : ''
+              }
+              <input type="button" className="btn-evolve" value="Evolve -->"
+                onClick={() => this.evolveNextGeneration()} />
+            </div>
+          </div>
+          : this.props.params.lineageId ?
+            <div>
+              <p>
+                Cannot find a population with ID <strong>{this.props.params.lineageId}</strong>.&nbsp;
+                <Link to="/populations">Create a new family</Link> or <Link to="/">load saved families</Link>.
+              </p>
+            </div>
+            :
+            ''
+        }
 
       </div>
     );
@@ -216,7 +231,8 @@ class PopulationsContainer extends Component {
   }
 
   getCurrentPopulation() {
-    return this.props.populations[this.props.currentPopulationIndex];
+    return this.props.populations ?
+      this.props.populations[this.props.currentPopulationIndex] : null;
   }
 
   playMemberAudio( notesFromBase, memberIndex ) {
@@ -255,7 +271,8 @@ class PopulationsContainer extends Component {
   }
 
   doesGenerationAfterCurrentExist() {
-    return this.props.populations.length > this.props.currentPopulationIndex + 1;
+    return this.props.populations &&
+      this.props.populations.length > this.props.currentPopulationIndex + 1;
   }
 }
 

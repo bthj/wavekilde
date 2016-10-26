@@ -98,7 +98,7 @@ export default function( state = INITIAL_STATE, action ) {
     case SET_LINEAGE:
       return {...state,
         populations: action.lineage,
-        currentPopulationIndex: 0
+        currentPopulationIndex: action.populationIndex
       };
     default:
       return state;

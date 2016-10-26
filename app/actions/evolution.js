@@ -43,18 +43,19 @@ export function clearPopulations() {
 }
 
 
-export function loadLineageFromLocalDb( lineageId ) {
+export function loadLineageFromLocalDb( lineageId, populationIndex ) {
   return function( dispatch, getState ) {
     db.getLineage( lineageId ).then( lineage => {
-      dispatch( receiveLineageFromLocalDb(lineage) );
+      dispatch( receiveLineageFromLocalDb( lineage, populationIndex ) );
     });
   }
 }
 
-function receiveLineageFromLocalDb( lineage ) {
+function receiveLineageFromLocalDb( lineage, populationIndex ) {
   console.log("receiveLineageFromLocalDb: ", lineage);
   return {
     type: SET_LINEAGE,
-    lineage
+    lineage,
+    populationIndex: lineage ? populationIndex : -1
   };
 }
