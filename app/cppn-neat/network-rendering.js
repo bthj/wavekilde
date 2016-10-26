@@ -1,8 +1,8 @@
 import { isAudible, remapNumberToRange, numWorkers } from '../util/range';
 import { concatenateTypedArrays } from '../util/arrays';
 
-const GainValuesPerAudioWavesWorker = require("worker!../workers/gain-values-per-audio-wave-worker.js");
-const RemapControlArrayToValueCurveRangeWorker = require("worker!../workers/remap-control-array-to-value-curve-range-worker.js");
+const GainValuesPerAudioWavesWorker = require("worker?inline!../workers/gain-values-per-audio-wave-worker.js");
+const RemapControlArrayToValueCurveRangeWorker = require("worker?inline!../workers/remap-control-array-to-value-curve-range-worker.js");
 
 
 /**
