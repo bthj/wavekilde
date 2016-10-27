@@ -86,7 +86,7 @@ class PopulationsContainer extends Component {
     // console.log( "this.props.populations", this.props.populations );
     return(
       <div>
-
+        <h1>Family: {this.props.lineageKey}</h1>
         <h2>Population {this.props.currentPopulationIndex}</h2>
 
         {this.props.populations ?
