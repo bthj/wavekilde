@@ -6,7 +6,7 @@ const Home = React.createClass({
     return(
       <div className="home-page">
 
-        <h1>Welcome to WaveKilde</h1>
+        <h1>WaveKilde</h1>
 
         <LineagesContainer />
 

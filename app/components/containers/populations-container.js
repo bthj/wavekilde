@@ -122,6 +122,28 @@ class PopulationsContainer extends Component {
               <input type="button" className="btn-evolve" value="Evolve -->"
                 onClick={() => this.evolveNextGeneration()} />
             </div>
+
+            <div>
+              {this.props.params.lineageId ?
+                [
+                "Go to generation:  "
+                ,
+                this.props.populations.map( (onePopulation, populationIndex) =>
+                  <span>
+                    <Link
+                      key={`populationLink${populationIndex}`}
+                      to={`/populations/${this.props.params.lineageId}/${populationIndex}`}
+                      onClick={() => this.goToGeneration(populationIndex)}>
+                        {populationIndex}
+                      </Link>
+                      &nbsp;
+                    </span>
+                )
+                ]
+                : ''
+              }
+            </div>
+
           </div>
           : this.props.params.lineageId ?
             <div>
@@ -264,6 +286,11 @@ class PopulationsContainer extends Component {
     if( this.props.currentPopulationIndex > 0 ) {
       this.props.setCurrentPopulation ( this.props.currentPopulationIndex - 1 );
     }
+  }
+
+  goToGeneration( populationIndex ) {
+
+    this.props.setCurrentPopulation ( populationIndex );
   }
 
   removeLastGeneration() {
