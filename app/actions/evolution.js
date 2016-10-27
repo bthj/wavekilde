@@ -3,6 +3,7 @@ import {
   POPULATION_EVOLVE,
   MEMBER_SET_CURRENT,
   LINEAGE_SET_KEY,
+  LINEAGE_SET_NAME,
   CLEAR_POPULATIONS,
   SET_LINEAGE
 } from './types';
@@ -36,6 +37,13 @@ export function setLineageKey( key ) {
   };
 }
 
+export function setLineageName( name ) {
+  return {
+    type: LINEAGE_SET_NAME,
+    name
+  };
+}
+
 export function clearPopulations() {
   return {
     type: CLEAR_POPULATIONS
@@ -55,7 +63,8 @@ function receiveLineageFromLocalDb( lineage, populationIndex ) {
   console.log("receiveLineageFromLocalDb: ", lineage);
   return {
     type: SET_LINEAGE,
-    lineage,
+    lineage: lineage.populations,
+    name: lineage.name,
     populationIndex: lineage ? populationIndex : -1
   };
 }

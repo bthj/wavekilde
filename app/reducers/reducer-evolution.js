@@ -3,6 +3,7 @@ import {
   POPULATION_EVOLVE,
   MEMBER_SET_CURRENT,
   LINEAGE_SET_KEY,
+  LINEAGE_SET_NAME,
   CLEAR_POPULATIONS,
   SET_LINEAGE
 } from '../actions/types';
@@ -63,7 +64,7 @@ export default function( state = INITIAL_STATE, action ) {
       const populations = getPopulationsCoveringIndex(
         action.populationIndex, state.populations );
       if( 0 === action.populationIndex ) {
-        db.saveLineage( state.lineageKey, populations );
+        db.saveLineage( state.lineageKey, state.lineageName, populations );
       }
       return {...state,
         populations,
@@ -78,7 +79,7 @@ export default function( state = INITIAL_STATE, action ) {
           state.populations[state.currentPopulationIndex]
         )
       ];
-      db.saveLineage( state.lineageKey, populations );
+      db.saveLineage( state.lineageKey, state.lineageName, populations );
       return {...state,
         populations
       };
@@ -91,6 +92,10 @@ export default function( state = INITIAL_STATE, action ) {
       return {...state,
         lineageKey: action.key
       };
+    case LINEAGE_SET_NAME:
+      return {...state,
+        lineageName: action.name
+      };
     case CLEAR_POPULATIONS:
       return {...state,
         populations: []
@@ -98,6 +103,7 @@ export default function( state = INITIAL_STATE, action ) {
     case SET_LINEAGE:
       return {...state,
         populations: action.lineage,
+        lineageName: action.name,
         currentPopulationIndex: action.populationIndex
       };
     default:

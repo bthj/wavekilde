@@ -26,7 +26,9 @@ export default class LineagesContainer extends Component {
       <div>
         <h2>Breed new sounds</h2>
         <h3>New lineage</h3>
-        <p>Start breeding from initial seeds</p>
+        <p>
+          <Link to="/populations">Start breeding from initial seeds</Link>
+        </p>
         <h3>Saved lineages</h3>
         <ul>
           {this.state.fetchingLineageKeys ?

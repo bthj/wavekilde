@@ -4,8 +4,8 @@ const lineageStore = localForage.createInstance({
   name: "waveKilde"
 });
 
-export function saveLineage( key, populations ) {
-  return lineageStore.setItem( key, populations )
+export function saveLineage( key, name, populations ) {
+  return lineageStore.setItem( key, {name, populations} )
   .then( populations => populations )
   .catch( err => {
     console.error( err );

@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
 import {
-  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey,
+  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation,
+  setLineageKey, setLineageName,
   clearPopulations, loadLineageFromLocalDb
 } from '../../actions/evolution';
 import {
@@ -15,6 +16,7 @@ import PopulationGrid from '../views/population-grid';
 import IndividualContainer from './individual-container';
 
 import { Loader } from 'react-loaders';
+import uuid from 'uuid';
 
 const loaders = ["line-scale", "line-scale-party", "line-scale-pulse-out", "line-scale-pulse-out-rapid"];
 
@@ -60,7 +62,8 @@ class PopulationsContainer extends Component {
     } else {
       if( this.props.currentPopulationIndex < 0 ) {
         this.props.clearPopulations(); // clear app state from populatins
-        this.props.setLineageKey( new Date().toString() );
+        this.props.setLineageKey( uuid.v1() );
+        this.props.setLineageName( new Date().toString() );
         this.props.setCurrentPopulation ( populationIndex );
       }
     }
@@ -86,7 +89,7 @@ class PopulationsContainer extends Component {
     // console.log( "this.props.populations", this.props.populations );
     return(
       <div>
-        <h1>Family: {this.props.lineageKey}</h1>
+        <h1>Family: {this.props.lineageName}</h1>
         <h2>Population {this.props.currentPopulationIndex}</h2>
 
         {this.props.populations ?
@@ -311,7 +314,8 @@ function mapStateToProps( state ) {
 }
 
 export default connect(mapStateToProps, {
-  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation, setLineageKey,
+  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation,
+  setLineageKey, setLineageName,
   getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation,
   clearPopulations, loadLineageFromLocalDb
 })(PopulationsContainer);
