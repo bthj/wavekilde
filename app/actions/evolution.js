@@ -9,13 +9,6 @@ import {
 } from './types';
 import * as db from '../persistence/db-local';
 
-export function setCurrentPopulation( populationIndex ) {
-  return {
-    type: POPULATION_SET_CURRENT,
-    populationIndex
-  };
-}
-
 export function evolveCurrentPopulation( parentIdexes ) {
   return {
     type: POPULATION_EVOLVE,
@@ -51,9 +44,34 @@ export function clearPopulations() {
 }
 
 
-export function loadLineageFromLocalDb( lineageId, populationIndex ) {
+function setCurrentPopulation( lineageKey, populationIndex ) {
   return function( dispatch, getState ) {
-    db.getLineage( lineageId ).then( lineage => {
+    db.getPopulationFromLineage( lineageKey, populationIndex )
+    .then( population => {
+      dispatch( receivePopulationFromLocalDb( population, populationIndex ) );
+    });
+  }
+}
+
+receivePopulationFromLocalDb( population, populationIndex ) {
+  return {
+    type: POPULATION_SET_CURRENT,
+    population,
+    populationIndex
+  };
+}
+
+// export function setCurrentPopulation( populationIndex ) {
+//   return {
+//     type: POPULATION_SET_CURRENT,
+//     populationIndex
+//   };
+// }
+
+
+export function loadLineageFromLocalDb( lineageKey, populationIndex ) {
+  return function( dispatch, getState ) {
+    db.getLineage( lineageKey ).then( lineage => {
       dispatch( receiveLineageFromLocalDb( lineage, populationIndex ) );
     });
   }

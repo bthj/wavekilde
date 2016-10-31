@@ -303,7 +303,8 @@ class PopulationsContainer extends Component {
 
   doesGenerationAfterCurrentExist() {
     return this.props.populations &&
-      this.props.populations.length > this.props.currentPopulationIndex + 1;
+      // this.props.populations.length > this.props.currentPopulationIndex + 1;
+      this.props.populationsCount > this.props.currentPopulationIndex + 1;
   }
 }
 

@@ -30,6 +30,7 @@ const evolver = new Evolver();
  * @param  {Array} populations Array of populations form the current state.
  * @return {Array}             Array of populations reaching at least the provided index.
  */
+/*
 function getPopulationsCoveringIndex( index, populations ) {
   let nextPopulations;
   if( ! populations[index] ) {
@@ -49,6 +50,19 @@ function getPopulationsCoveringIndex( index, populations ) {
     nextPopulations = populations
   }
   return nextPopulations;
+}
+*/
+function getPopulationsCoveringIndex( index ) {
+  const populations = [];
+  for( let i=0; i < index; i++ ) {
+    if( i === 0 ) {
+      populations.push( evolover.createFirstPopulation() );
+    } else {
+      // evolution without parents to fill the gap up to the provided index
+      populations.push( evolver.evolveNextGeneration( [] ) );
+    }
+  }
+  return populations;
 }
 
 function evolveNewPopulation( parentIndexes, population ) {
@@ -74,17 +88,34 @@ function evolveNewPopulation( parentIndexes, population ) {
 export default function( state = INITIAL_STATE, action ) {
   switch( action.type ) {
     case POPULATION_SET_CURRENT: {
+      let currentPopulation;
+      let populationsCount;
+      if( action.population ) {
+        currentPopulation = action.population;
+      } else {
+        const populations = getPopulationsCoveringIndex(
+          action.populationIndex /*, state.populations */ );
+        db.initializeLineage( state.lineageKey, state.lineageName, populations );
+        currentPopulation = populations[action.populationIndex];
+        populationsCount = populations.length;
+      }
+/*
       const populations = getPopulationsCoveringIndex(
         action.populationIndex, state.populations );
       if( 0 === action.populationIndex ) {
-        db.saveLineage( state.lineageKey, state.lineageName, populations );
+        // db.saveLineage( state.lineageKey, state.lineageName, populations );
+        db.initializeLineage( state.lineageKey, state.lineageName, populations );
       }
+*/
       return {...state,
-        populations,
-        currentPopulationIndex: action.populationIndex
+        // populations,
+        currentPopulation,
+        currentPopulationIndex: action.populationIndex,
+        populationsCount: populationsCount ? populationsCount : state.populationsCount
       };
     }
     case POPULATION_EVOLVE: {
+/*
       const populations = [
         ...state.populations,
         evolveNewPopulation(
@@ -93,8 +124,17 @@ export default function( state = INITIAL_STATE, action ) {
         )
       ];
       db.saveLineage( state.lineageKey, state.lineageName, populations );
+*/
+      const newPopulation = evolveNewPopulation(
+        action.parentIdexes,
+        state.populations[state.currentPopulationIndex]
+      );
+      db.addPopulationToLineage( state.lineageKey, newPopulation );
       return {...state,
-        populations
+        // populations
+        currentPopulation: newPopulation,
+        currentPopulationIndex: ++state.currentPopulationIndex,
+        populationsCount: ++state.populationsCount
       };
     }
     case MEMBER_SET_CURRENT:
