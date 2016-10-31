@@ -16,6 +16,8 @@ const INITIAL_STATE = {
   currentMemberIndex: -1
 };
 
+import neatjs from 'neatjs';
+
 const evolver = new Evolver();
 
 
@@ -52,7 +54,18 @@ function getPopulationsCoveringIndex( index, populations ) {
 function evolveNewPopulation( parentIndexes, population ) {
   const parents = [];
   parentIndexes.forEach( oneParentIndex => {
-    parents.push( population[oneParentIndex].offspring );
+    let oneParent;
+    if( population[oneParentIndex].offspring.createOffspringAsexual ) {
+      oneParent = population[oneParentIndex].offspring;
+    } else {
+      oneParent = new neatjs.neatGenome( `${Math.random()}`,
+        population[oneParentIndex].offspring.nodes,
+        population[oneParentIndex].offspring.connections,
+        population[oneParentIndex].offspring.inputNodeCount,
+        population[oneParentIndex].offspring.outputNodeCount
+      );
+    }
+    parents.push( oneParent );
   });
   const newPopulation = evolver.evolveNextGeneration( parents );
   return newPopulation;

@@ -276,7 +276,8 @@ class PopulationsContainer extends Component {
       memberIndexSelected => memberIndexSelected > -1 );
     this.props.evolveCurrentPopulation( parentIndexes );
     this.setState({ memberSelection: new Array( POPULATION_SIZE ) });
-    this.props.setCurrentPopulation( this.props.currentPopulationIndex + 1 );
+    this.props.setCurrentPopulation(
+      parseInt( this.props.currentPopulationIndex ) + 1 );
   }
 
   forwardOneGeneration() {
