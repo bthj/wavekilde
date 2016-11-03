@@ -24,17 +24,20 @@ export function initializeLineage( key, name, populations ) {
 */
 
 export function initializeLineage( key, name, populations ) {
-  setLineageName( key, name );
-  populations.forEach( onePopulation => {
-    addPopulationToLineage( key, onePopulation );
-  });
+  setLineageName( key, name ).then( name => {
+
+    populations.forEach( onePopulation => {
+      addPopulationToLineage( key, onePopulation );
+    });
+
+  }).catch( err => console.log(err) );
 }
 
 export function setLineageName( key, name ) {
-  lineageStore.getItem( key ).then( lineageMeta => {
+  return lineageStore.getItem( key ).then( lineageMeta => {
     if( ! lineageMeta ) lineageMeta = {};
-    lineageStore.setItem( key, {...lineageMeta, name} )
-    .then( lineageMeta => lineageMeta )
+    return lineageStore.setItem( key, {...lineageMeta, name} )
+    .then( lineageMeta => {return lineageMeta.name} )
     .catch( err => console.log(err) );
   }).catch( err => console.log(err) );
 }

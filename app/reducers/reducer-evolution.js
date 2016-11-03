@@ -66,8 +66,7 @@ function evolveNewPopulation( parentIndexes, population ) {
 export default function( state = INITIAL_STATE, action ) {
   switch( action.type ) {
     case POPULATION_INITIALZE: {
-      const populations = getPopulationsCoveringIndex(
-        action.populationIndex /*, state.populations */ );
+      const populations = getPopulationsCoveringIndex( action.populationIndex );
 
       db.initializeLineage( action.lineageKey, action.lineageName, populations );
 
