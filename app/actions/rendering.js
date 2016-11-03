@@ -43,10 +43,10 @@ function grabReferenceToReduxStoreDispatch( dispatch ) {
 }
 
 let postToActivationWorker;
-export function getOutputsForMember( populationIndex, memberIndex ) {
+export function getOutputsForMemberInCurrentPopulation( populationIndex, memberIndex ) {
 
   return function(dispatch, getState) {
-    const member = getState().evolution.populations[populationIndex][memberIndex];
+    const member = getState().evolution.currentPopulation[memberIndex];
     const {frameCount} = getState().rendering;
     const {sampleRate} = getState().rendering.audioCtx;
     const currentPatch = getState().patching.patches.get(

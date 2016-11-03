@@ -2,12 +2,14 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
 import {
-  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation,
+  initializePopulation, setCurrentPopulation,
+  setCurrentMember, evolveCurrentPopulation,
   setLineageKey, setLineageName,
   clearPopulations, loadLineageFromLocalDb
 } from '../../actions/evolution';
 import {
-  getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation
+  getOutputsForMemberInCurrentPopulation,
+  getAudioBuffersForMember, removeRenderingsForPopulation
 } from '../../actions/rendering';
 import { playAudioBuffer } from '../../util/play';
 import { POPULATION_SIZE } from '../../cppn-neat/evolution-constants';
@@ -45,7 +47,7 @@ class PopulationsContainer extends Component {
 
   componentDidUpdate( prevProps ) {
 
-    if( ! this.props.populations ) {
+    if( ! this.props.currentPopulation ) {
       this.getOrCreateFamily();
     }
 
@@ -61,10 +63,10 @@ class PopulationsContainer extends Component {
 
     } else {
       if( this.props.currentPopulationIndex < 0 ) {
+        const lineageKey = uuid.v1();
+        const lineageName = new Date().toString();
         this.props.clearPopulations(); // clear app state from populatins
-        this.props.setLineageKey( uuid.v1() );
-        this.props.setLineageName( new Date().toString() );
-        this.props.setCurrentPopulation ( populationIndex );
+        this.props.initializePopulation ( lineageKey, lineageName, populationIndex );
       }
     }
   }
@@ -92,7 +94,7 @@ class PopulationsContainer extends Component {
         <h1>Family: {this.props.lineageName}</h1>
         <h2>Population {this.props.currentPopulationIndex}</h2>
 
-        {this.props.populations ?
+        {this.getCurrentPopulation() ?
           <div>
 
             <input type="button" value="activate networks and render audio"
@@ -242,9 +244,8 @@ class PopulationsContainer extends Component {
   }
 
   startMemberOutputsRendering( memberIndex ) {
-    return this.props.getOutputsForMember(
-      this.props.currentPopulationIndex, memberIndex
-    );
+    return this.props.getOutputsForMemberInCurrentPopulation(
+      this.props.currentPopulationIndex, memberIndex );
   }
 
   startAudioBuffersRendering( memberIndex ) {
@@ -256,8 +257,7 @@ class PopulationsContainer extends Component {
   }
 
   getCurrentPopulation() {
-    return this.props.populations ?
-      this.props.populations[this.props.currentPopulationIndex] : null;
+    return this.props.currentPopulation;
   }
 
   playMemberAudio( notesFromBase, memberIndex ) {
@@ -276,8 +276,6 @@ class PopulationsContainer extends Component {
       memberIndexSelected => memberIndexSelected > -1 );
     this.props.evolveCurrentPopulation( parentIndexes );
     this.setState({ memberSelection: new Array( POPULATION_SIZE ) });
-    this.props.setCurrentPopulation(
-      parseInt( this.props.currentPopulationIndex ) + 1 );
   }
 
   forwardOneGeneration() {
@@ -303,7 +301,6 @@ class PopulationsContainer extends Component {
 
   doesGenerationAfterCurrentExist() {
     return this.props.populations &&
-      // this.props.populations.length > this.props.currentPopulationIndex + 1;
       this.props.populationsCount > this.props.currentPopulationIndex + 1;
   }
 }
@@ -316,8 +313,10 @@ function mapStateToProps( state ) {
 }
 
 export default connect(mapStateToProps, {
-  setCurrentPopulation, setCurrentMember, evolveCurrentPopulation,
+  initializePopulation, setCurrentPopulation,
+  setCurrentMember, evolveCurrentPopulation,
   setLineageKey, setLineageName,
-  getOutputsForMember, getAudioBuffersForMember, removeRenderingsForPopulation,
+  getOutputsForMemberInCurrentPopulation,
+  getAudioBuffersForMember, removeRenderingsForPopulation,
   clearPopulations, loadLineageFromLocalDb
 })(PopulationsContainer);

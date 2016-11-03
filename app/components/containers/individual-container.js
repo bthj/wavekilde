@@ -1,6 +1,8 @@
 import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux';
-import { getOutputsForMember, getAudioBuffersForMember } from '../../actions/rendering';
+import {
+  getOutputsForMemberInCurrentPopulation, getAudioBuffersForMember
+} from '../../actions/rendering';
 import { isAudible, remapNumberToRange } from '../../util/range';
 import { playAudioBuffer } from '../../util/play';
 
@@ -52,13 +54,12 @@ class IndividualContainer extends Component {
     return this.props.populationIndex >= 0 && this.props.memberIndex >= 0;
   }
   getSelectedMember() {
-    return this.props.populations[this.props.populationIndex][this.props.memberIndex];
+    return this.props.currentPopulation[this.props.memberIndex];
   }
 
   startMemberOutputsRendering() {
-    return this.props.getOutputsForMember(
-      this.props.populationIndex, this.props.memberIndex
-    );
+    return this.props.getOutputsForMemberInCurrentPopulation(
+      this.props.populationIndex, this.props.memberIndex );
   }
 
   startAudioBuffersRendering() {
@@ -254,11 +255,11 @@ function mapStateToProps( state ) {
     rendering: state.rendering,
     populationIndex: state.evolution.currentPopulationIndex,
     memberIndex: state.evolution.currentMemberIndex,
-    populations: state.evolution.populations
+    currentPopulation: state.evolution.currentPopulation
   };
 }
 
 export default connect(mapStateToProps, {
-  getOutputsForMember,
+  getOutputsForMemberInCurrentPopulation,
   getAudioBuffersForMember
 })(IndividualContainer);

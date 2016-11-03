@@ -26,7 +26,7 @@ export function initializeLineage( key, name, populations ) {
 export function initializeLineage( key, name, populations ) {
   setLineageName( key, name );
   populations.forEach( onePopulation => {
-    addPopulationToLineage( key, population );
+    addPopulationToLineage( key, onePopulation );
   });
 }
 
@@ -53,7 +53,7 @@ export function addPopulationToLineage( key, population ) {
   return incrementLineagePopulationCount( key ).then( populationsCount => {
     const populationKey = getPopulationKey( key, populationsCount);
     return populationsStore.setItem( populationKey, population )
-    .then( populatoin => population )
+    .then( population => population )
     .catch( err => console.log(err) );
   }).catch( err => console.log(err) );
 }

@@ -1,4 +1,5 @@
 import {
+  POPULATION_INITIALZE,
   POPULATION_SET_CURRENT,
   POPULATION_EVOLVE,
   MEMBER_SET_CURRENT,
@@ -43,8 +44,17 @@ export function clearPopulations() {
   };
 }
 
+export function initializePopulation( lineageKey, lineageName, populationIndex ) {
+  return {
+    type: POPULATION_INITIALZE,
+    lineageKey,
+    lineageName,
+    populationIndex
+  }
+}
 
-function setCurrentPopulation( lineageKey, populationIndex ) {
+
+export function setCurrentPopulation( lineageKey, populationIndex ) {
   return function( dispatch, getState ) {
     db.getPopulationFromLineage( lineageKey, populationIndex )
     .then( population => {
@@ -53,20 +63,13 @@ function setCurrentPopulation( lineageKey, populationIndex ) {
   }
 }
 
-receivePopulationFromLocalDb( population, populationIndex ) {
+function receivePopulationFromLocalDb( population, populationIndex ) {
   return {
     type: POPULATION_SET_CURRENT,
     population,
     populationIndex
   };
 }
-
-// export function setCurrentPopulation( populationIndex ) {
-//   return {
-//     type: POPULATION_SET_CURRENT,
-//     populationIndex
-//   };
-// }
 
 
 export function loadLineageFromLocalDb( lineageKey, populationIndex ) {
