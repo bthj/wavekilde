@@ -121,10 +121,16 @@ export default function( state = INITIAL_STATE, action ) {
         currentPopulation: null
       };
     case SET_LINEAGE:
+      const {
+        currentPopulation, currentPopulationIndex,
+        populationsCount, lineageName, lineageKey
+      } = action;
       return {...state,
-        populations: action.lineage,
-        lineageName: action.name,
-        currentPopulationIndex: action.populationIndex
+        currentPopulation,
+        currentPopulationIndex,
+        populationsCount,
+        lineageName,
+        lineageKey
       };
     default:
       return state;

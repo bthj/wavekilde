@@ -45,7 +45,7 @@ export function setLineageName( key, name ) {
 export function incrementLineagePopulationCount( key ) {
   return lineageStore.getItem( key ).then( lineageMeta => {
     if( ! lineageMeta ) lineageMeta = {};
-    const populationsCount = ++lineageMeta.populationsCount | 0;
+    const populationsCount = ++lineageMeta.populationsCount || 1;
     return lineageStore.setItem( key, {...lineageMeta, populationsCount} )
     .then( lineageMeta => {return lineageMeta.populationsCount} )
     .catch( err => console.log(err) );
@@ -54,7 +54,7 @@ export function incrementLineagePopulationCount( key ) {
 
 export function addPopulationToLineage( key, population ) {
   return incrementLineagePopulationCount( key ).then( populationsCount => {
-    const populationKey = getPopulationKey( key, populationsCount);
+    const populationKey = getPopulationKey( key, populationsCount-1);
     return populationsStore.setItem( populationKey, population )
     .then( population => population )
     .catch( err => console.log(err) );
@@ -76,7 +76,7 @@ export function getAllLineageKeys() {
   } ).catch( err => { console.error(err); } );
 }
 
-export function getLineage( lineageId ) {
+export function getLineageMeta( lineageId ) {
   return lineageStore.getItem( lineageId ).then( lineage => {
     return lineage;
   }).catch( err => { console.error(err); } );

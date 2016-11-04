@@ -59,7 +59,6 @@ class PopulationsContainer extends Component {
     if( this.props.params.lineageId ) {
 
       this.props.loadLineageFromLocalDb( this.props.params.lineageId, populationIndex );
-      this.props.setLineageKey( this.props.params.lineageId );
 
     } else {
       if( this.props.currentPopulationIndex < 0 ) {
@@ -133,13 +132,13 @@ class PopulationsContainer extends Component {
                 [
                 "Go to generation:  "
                 ,
-                this.props.populations.map( (onePopulation, populationIndex) =>
+                [...Array(this.props.populationsCount)].map( (e, populationIndex) =>
                   <span>
                     <Link
                       key={`populationLink${populationIndex}`}
                       to={`/populations/${this.props.params.lineageId}/${populationIndex}`}
                       onClick={() => this.goToGeneration(populationIndex)}>
-                        {populationIndex}
+                        {populationIndex+1}
                       </Link>
                       &nbsp;
                     </span>
@@ -280,13 +279,15 @@ class PopulationsContainer extends Component {
 
   forwardOneGeneration() {
     if( this.doesGenerationAfterCurrentExist() ) {
-      this.props.setCurrentPopulation ( this.props.currentPopulationIndex + 1 );
+      this.props.setCurrentPopulation (
+        this.props.lineageKey, this.props.currentPopulationIndex + 1 );
     }
   }
 
   backOneGeneration() {
     if( this.props.currentPopulationIndex > 0 ) {
-      this.props.setCurrentPopulation ( this.props.currentPopulationIndex - 1 );
+      this.props.setCurrentPopulation(
+        this.props.lineageKey, this.props.currentPopulationIndex - 1 );
     }
   }
 
@@ -300,8 +301,7 @@ class PopulationsContainer extends Component {
   }
 
   doesGenerationAfterCurrentExist() {
-    return this.props.populations &&
-      this.props.populationsCount > this.props.currentPopulationIndex + 1;
+    return this.props.populationsCount > this.props.currentPopulationIndex + 1;
   }
 }
 

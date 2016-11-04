@@ -74,18 +74,28 @@ function receivePopulationFromLocalDb( population, populationIndex ) {
 
 export function loadLineageFromLocalDb( lineageKey, populationIndex ) {
   return function( dispatch, getState ) {
-    db.getLineage( lineageKey ).then( lineage => {
-      dispatch( receiveLineageFromLocalDb( lineage, populationIndex ) );
+    db.getLineageMeta( lineageKey ).then( lineageMeta => {
+      console.log("local db lineage: ", lineageMeta);
+
+      db.getPopulationFromLineage( lineageKey, populationIndex )
+      .then( population => {
+
+        dispatch( receiveLineageFromLocalDb(
+          lineageKey, lineageMeta, populationIndex, population ) );
+      });
     });
   }
 }
 
-function receiveLineageFromLocalDb( lineage, populationIndex ) {
-  console.log("receiveLineageFromLocalDb: ", lineage);
+function receiveLineageFromLocalDb(
+    lineageKey, lineageMeta, populationIndex, population ) {
+
   return {
     type: SET_LINEAGE,
-    lineage: lineage.populations,
-    name: lineage.name,
-    populationIndex: lineage ? populationIndex : -1
+    currentPopulation: population,
+    currentPopulationIndex: populationIndex,
+    populationsCount: lineageMeta ? lineageMeta.populationsCount : -1,
+    lineageName: lineageMeta ? lineageMeta.name : undefined,
+    lineageKey
   };
 }
