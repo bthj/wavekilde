@@ -55,7 +55,9 @@ class PopulationsContainer extends Component {
   }
 
   getOrCreateFamily() {
-    const populationIndex = this.props.params.populationIndex ? this.props.params.populationIndex : 0;
+    const populationIndex = this.props.params.populationIndex ?
+      parseInt(this.props.params.populationIndex) : 0;
+      
     if( this.props.params.lineageId ) {
 
       this.props.loadLineageFromLocalDb( this.props.params.lineageId, populationIndex );
