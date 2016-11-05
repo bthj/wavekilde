@@ -46,8 +46,10 @@ export function incrementLineagePopulationCount( key ) {
   return lineageStore.getItem( key ).then( lineageMeta => {
     if( ! lineageMeta ) lineageMeta = {};
     const populationsCount = ++lineageMeta.populationsCount || 1;
-    return lineageStore.setItem( key, {...lineageMeta, populationsCount} )
-    .then( lineageMeta => {return lineageMeta.populationsCount} )
+    const updated = Date.now();
+    return lineageStore.setItem(
+      key, {...lineageMeta, populationsCount, updated}
+    ).then( lineageMeta => {return lineageMeta.populationsCount} )
     .catch( err => console.log(err) );
   }).catch( err => console.log(err) );
 }
@@ -81,6 +83,12 @@ export function getAllLineageMetaEntries () {
   return lineageStore.iterate( (lineageMeta, key, iterationNumber) => {
       lineageMetaEntries.push( [lineageMeta, key] );
   }).then( () => {
+      // sort lineages by when they were updated, in descending time order
+      lineageMetaEntries.sort( (a, b) => {
+        if( a[0].updated > b[0].updated ) return -1;
+        if( a[0].updated < b[0].updated ) return 1;
+        return 0
+      });
       return lineageMetaEntries;
   }).catch( (err) => {
       console.log(err);

@@ -118,7 +118,11 @@ export default function( state = INITIAL_STATE, action ) {
       };
     case CLEAR_POPULATIONS:
       return {...state,
-        currentPopulation: null
+        currentPopulation: null,
+        currentPopulationIndex: null,
+        populationsCount: null,
+        lineageName: null,
+        lineageKey: null
       };
     case SET_LINEAGE:
       const {
