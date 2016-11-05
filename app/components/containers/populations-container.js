@@ -57,7 +57,7 @@ class PopulationsContainer extends Component {
   getOrCreateFamily() {
     const populationIndex = this.props.params.populationIndex ?
       parseInt(this.props.params.populationIndex) : 0;
-      
+
     if( this.props.params.lineageId ) {
 
       this.props.loadLineageFromLocalDb( this.props.params.lineageId, populationIndex );
@@ -93,7 +93,7 @@ class PopulationsContainer extends Component {
     return(
       <div>
         <h1>Family: {this.props.lineageName}</h1>
-        <h2>Population {this.props.currentPopulationIndex}</h2>
+        <h2>Population {this.props.currentPopulationIndex+1}</h2>
 
         {this.getCurrentPopulation() ?
           <div>
