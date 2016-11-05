@@ -76,6 +76,17 @@ export function getAllLineageKeys() {
   } ).catch( err => { console.error(err); } );
 }
 
+export function getAllLineageMetaEntries () {
+  const lineageMetaEntries = [];
+  return lineageStore.iterate( (lineageMeta, key, iterationNumber) => {
+      lineageMetaEntries.push( [lineageMeta, key] );
+  }).then( () => {
+      return lineageMetaEntries;
+  }).catch( (err) => {
+      console.log(err);
+  });
+}
+
 export function getLineageMeta( lineageId ) {
   return lineageStore.getItem( lineageId ).then( lineage => {
     return lineage;
