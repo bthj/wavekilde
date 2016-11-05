@@ -12,6 +12,7 @@ export const RECEIVE_OUTPUTS_FOR_MEMBER = 'receive_outputs_for_member';
 export const REQUEST_AUDIO_BUFFER_FOR_MEMBER = 'request_audio_buffer_for_member';
 export const RECEIVE_AUDIO_BUFFER_FOR_MEMBER = 'receive_audio_buffer_for_member';
 export const REMOVE_RENDERINGS_FOR_POPULATION = 'remove_renderings_for_population';
+export const REMOVE_ALL_RENDERINGS = 'remove_all_renderings';
 
 export const PATCH_ADD = 'patch_add';
 export const PATCH_REMOVE = 'patch_remove';

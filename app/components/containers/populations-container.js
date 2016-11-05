@@ -9,7 +9,8 @@ import {
 } from '../../actions/evolution';
 import {
   getOutputsForMemberInCurrentPopulation,
-  getAudioBuffersForMember, removeRenderingsForPopulation
+  getAudioBuffersForMember,
+  removeRenderingsForPopulation, removeAllRenderings
 } from '../../actions/rendering';
 import { playAudioBuffer } from '../../util/play';
 import { POPULATION_SIZE } from '../../cppn-neat/evolution-constants';
@@ -42,6 +43,8 @@ class PopulationsContainer extends Component {
 
   componentDidMount() {
 
+    this.props.removeAllRenderings();
+
     this.getOrCreateFamily();
   }
 
@@ -49,6 +52,10 @@ class PopulationsContainer extends Component {
 
     if( ! this.props.currentPopulation ) {
       this.getOrCreateFamily();
+    } else if( !this.props.params.lineageId && this.props.lineageKey ) {
+      // we have newly created lineage in redux app state,
+      // let's navigate to an url with it's ID:
+      this.props.history.push( `/populations/${this.props.lineageKey}/0` );
     }
 
     this.activateNetworksAndRenderAudio();
@@ -63,12 +70,10 @@ class PopulationsContainer extends Component {
       this.props.loadLineageFromLocalDb( this.props.params.lineageId, populationIndex );
 
     } else {
-      if( this.props.currentPopulationIndex < 0 ) {
-        const lineageKey = uuid.v1();
-        const lineageName = new Date().toString();
-        this.props.clearPopulations(); // clear app state from populatins
-        this.props.initializePopulation ( lineageKey, lineageName, populationIndex );
-      }
+      const lineageKey = uuid.v1();
+      const lineageName = new Date().toString();
+      this.props.clearPopulations(); // clear app state from populatins
+      this.props.initializePopulation ( lineageKey, lineageName, populationIndex );
     }
   }
 
@@ -319,6 +324,7 @@ export default connect(mapStateToProps, {
   setCurrentMember, evolveCurrentPopulation,
   setLineageKey, setLineageName,
   getOutputsForMemberInCurrentPopulation,
-  getAudioBuffersForMember, removeRenderingsForPopulation,
+  getAudioBuffersForMember,
+  removeRenderingsForPopulation, removeAllRenderings,
   clearPopulations, loadLineageFromLocalDb
 })(PopulationsContainer);

@@ -4,7 +4,8 @@ import {
   RECEIVE_OUTPUTS_FOR_MEMBER,
   REQUEST_AUDIO_BUFFER_FOR_MEMBER,
   RECEIVE_AUDIO_BUFFER_FOR_MEMBER,
-  REMOVE_RENDERINGS_FOR_POPULATION
+  REMOVE_RENDERINGS_FOR_POPULATION,
+  REMOVE_ALL_RENDERINGS
 } from '../actions/types';
 
 const duration = 1;  // in seconds
@@ -70,6 +71,13 @@ export default function( state = INITIAL_STATE, action ) {
       return {...state,
         memberOutputs: state.memberOutputs.removeIn( [action.populationIndex] ),
         memberRenderedSounds: state.memberRenderedSounds.removeIn( [action.populationIndex] )
+      }
+    case REMOVE_ALL_RENDERINGS:
+      return {...state,
+        renderingMemberOutputs: Immutable.Map(),
+        memberOutputs: Immutable.Map(),
+        renderingMemberSounds: Immutable.Map(),
+        memberRenderedSounds: Immutable.Map()
       }
     default:
       return state;

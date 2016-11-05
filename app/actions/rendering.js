@@ -3,7 +3,8 @@ import {
   RECEIVE_OUTPUTS_FOR_MEMBER,
   REQUEST_AUDIO_BUFFER_FOR_MEMBER,
   RECEIVE_AUDIO_BUFFER_FOR_MEMBER,
-  REMOVE_RENDERINGS_FOR_POPULATION
+  REMOVE_RENDERINGS_FOR_POPULATION,
+  REMOVE_ALL_RENDERINGS
 } from './types';
 import { numWorkers } from '../util/range';
 import { concatenateTypedArrays } from '../util/arrays';
@@ -223,5 +224,11 @@ export function removeRenderingsForPopulation( populationIndex ) {
   return {
     type: REMOVE_RENDERINGS_FOR_POPULATION,
     populationIndex
+  }
+}
+
+export function removeAllRenderings() {
+  return {
+    type: REMOVE_ALL_RENDERINGS
   }
 }
