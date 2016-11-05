@@ -293,7 +293,7 @@ class PopulationsContainer extends Component {
 
   goToGeneration( populationIndex ) {
 
-    this.props.setCurrentPopulation ( populationIndex );
+    this.props.setCurrentPopulation ( this.props.lineageKey, populationIndex );
   }
 
   removeLastGeneration() {
