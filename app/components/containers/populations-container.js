@@ -55,7 +55,7 @@ class PopulationsContainer extends Component {
     } else if( !this.props.params.lineageId && this.props.lineageKey ) {
       // we have newly created lineage in redux app state,
       // let's navigate to an url with it's ID:
-      this.props.history.push( `/populations/${this.props.lineageKey}/0` );
+      this.props.history.push( `/lineage/${this.props.lineageKey}/0` );
     }
 
     this.activateNetworksAndRenderAudio();
@@ -119,7 +119,9 @@ class PopulationsContainer extends Component {
                 onClick={() => this.evolveNextGeneration()} />
             </div>
             <br />
+
             {this.getPopulationNodes()}
+
             <br style={{clear:"both"}} />
             <div>
               {this.props.currentPopulationIndex > 0 ?
@@ -143,7 +145,7 @@ class PopulationsContainer extends Component {
                   <span>
                     <Link
                       key={`populationLink${populationIndex}`}
-                      to={`/populations/${this.props.params.lineageId}/${populationIndex}`}
+                      to={`/lineage/${this.props.params.lineageId}/${populationIndex}`}
                       onClick={() => this.goToGeneration(populationIndex)}>
                         {populationIndex+1}
                       </Link>
@@ -160,7 +162,7 @@ class PopulationsContainer extends Component {
             <div>
               <p>
                 Cannot find a population with ID <strong>{this.props.params.lineageId}</strong>.&nbsp;
-                <Link to="/populations">Create a new family</Link> or <Link to="/">load saved families</Link>.
+                <Link to="/lineage">Create a new family</Link> or <Link to="/">load saved families</Link>.
               </p>
             </div>
             :
@@ -202,12 +204,30 @@ class PopulationsContainer extends Component {
                 {oneMember.offspring.nodes.map( (oneNode, nodeIndex) =>
                   <span key={nodeIndex}>{oneNode.activationFunction}, </span>)}
               </Link>
+              <br />
+              {this.isFavorite(memberIndex) ?
+                <input type="button" value="not favorite"
+                  onClick={() => this.removeFromFavorites()} />
+                :
+                <input type="button" value="set favorite"
+                  onClick={() => this.addAsFavorite()} />
+              }
             </div>
             : <Loader type={this.loaderTypes[memberIndex]} active={true} />
           }
         </div>
       );
     }) : '';
+  }
+
+  isFavorite( memberIndex ) {
+
+  }
+  addAsFavorite( memberindex ) {
+
+  }
+  removeFromFavorites( memberIndex ) {
+
   }
 
   toggleMemberIndexInSelectedState( memberIndex ) {

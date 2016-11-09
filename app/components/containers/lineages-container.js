@@ -27,7 +27,7 @@ export default class LineagesContainer extends Component {
         <h2>Breed new sounds</h2>
         <h3>New lineage</h3>
         <p>
-          <Link to="/populations">Start breeding from initial seeds</Link>
+          <Link to="/lineage">Start breeding from initial seeds</Link>
         </p>
         <h3>Saved lineages</h3>
         <ul>
@@ -35,7 +35,7 @@ export default class LineagesContainer extends Component {
             <Loader type="line-scale" active={true} />
             : this.state.lineageMetaEntries.map( oneMeta =>
               <li key={oneMeta[1]}>
-                <Link to={`/populations/${oneMeta[1]}/${oneMeta[0].populationsCount-1}`}>
+                <Link to={`/lineage/${oneMeta[1]}/${oneMeta[0].populationsCount-1}`}>
                   {oneMeta[0].name}
                 </Link>
               </li>

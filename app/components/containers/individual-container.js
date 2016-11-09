@@ -108,7 +108,7 @@ class IndividualContainer extends Component {
       }
 
     } else {
-      this.context.router.push( '/populations' );
+      this.context.router.push( '/lineage' );
     }
   }
 
