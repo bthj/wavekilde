@@ -34,9 +34,9 @@ export default class LineagesContainer extends Component {
           {this.state.fetchingLineageKeys ?
             <Loader type="line-scale" active={true} />
             : this.state.lineageMetaEntries.map( oneMeta =>
-              <li key={oneMeta[1]}>
-                <Link to={`/populations/${oneMeta[1]}/${oneMeta[0].populationsCount-1}`}>
-                  {oneMeta[0].name}
+              <li key={oneMeta._id}>
+                <Link to={`/populations/${oneMeta._id.substring(2)}/${oneMeta.populationsCount-1}`}>
+                  {oneMeta.name}
                 </Link>
               </li>
             )
