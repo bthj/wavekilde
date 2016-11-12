@@ -2,7 +2,7 @@ import PouchDB from 'pouchdb-browser';
 
 const db = new PouchDB('wavekilde');
 let remoteUserKilde = false;
-let remotePublicKilde = false;
+let remotePublicKilde = 'https://12aa56b4-b71f-4ce0-a2c5-a431b89eda45-bluemix.cloudant.com/wavekilde';
 
 
 export function initializeLineage( key, name, populations ) {
@@ -82,4 +82,32 @@ function getPopulationKey( key, populationIndex ) {
 
 function getLineageKey( key ) {
   return `l_${key}`;
+}
+
+
+
+// Initialise a one way replication to a remote server of published data
+function replicateToPublicKilde() {
+  const opts = {
+    live: true,
+    batch_size: 10 // trial and error for Cloudant - https://github.com/pouchdb/pouchdb/issues/4210#issuecomment-135796683
+  };
+  db.replicate.to( remotePublicKilde, opts, syncError );
+}
+
+// Initialise a sync with a remote server of selected user data
+function replicateToUserKilde() {
+  // TODO
+}
+
+function syncError( err ) {
+  // TODO: notify in UI?
+  console.error( err );
+}
+
+if( remotePublicKilde ) {
+  replicateToPublicKilde();
+}
+if( remoteUserKilde ) {
+  replicateToUserKilde();
 }
