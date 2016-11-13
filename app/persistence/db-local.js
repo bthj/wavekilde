@@ -59,11 +59,13 @@ export function getAllLineageMetaEntries () {
     startkey: 'l_', endkey: 'l_\uffff',
     include_docs: true
   }).then( result => {
+    console.log("result.rows.length: ", result.rows.length);
     result.rows.sort( (a, b) => {
       if( a.doc.updated > b.doc.updated ) return -1;
       if( a.doc.updated < b.doc.updated ) return 1;
       return 0;
     });
+    console.log( 'result.rows: ', result.rows );
     return result.rows.map( oneRow => oneRow.doc );
   }).catch( err => console.error(err) );
 }
@@ -72,6 +74,33 @@ export function getLineageMeta( lineageId ) {
   return db.get( getLineageKey(lineageId) ).then( lineage => {
     return lineage;
   }).catch( err => console.error(err) );
+}
+
+export function setLineagePublishedStatus( lineageId, isPublished ) {
+  console.log("lineageId: ", lineageId);
+  console.log("isPublished: ", isPublished);
+  setLineagePopulationsPublishedStatus( lineageId, isPublished );
+  return setLineageMetaPublishedStatus( lineageId, isPublished );
+}
+
+
+function setLineageMetaPublishedStatus( lineageId, isPublished ) {
+  return db.get( getLineageKey(lineageId) ).then( doc => {
+    doc.published = isPublished;
+    return db.put( doc );
+  });
+}
+
+function setLineagePopulationsPublishedStatus( lineageId, isPublished ) {
+  return db.allDocs({
+    startkey: `p_${lineageId}`, endkey: `p_${lineageId}\uffff`,
+    include_docs: true
+  }).then( result => {
+    result.rows.forEach( oneRow => {
+      oneRow.doc.published = isPublished;
+      return db.put( oneRow.doc );
+    });
+  })
 }
 
 
@@ -90,7 +119,10 @@ function getLineageKey( key ) {
 function replicateToPublicKilde() {
   const opts = {
     live: true,
-    batch_size: 10 // trial and error for Cloudant - https://github.com/pouchdb/pouchdb/issues/4210#issuecomment-135796683
+    batch_size: 10, // trial and error for Cloudant - https://github.com/pouchdb/pouchdb/issues/4210#issuecomment-135796683
+    filter: function( doc ) {
+      return doc.published !== undefined;
+    }
   };
   db.replicate.to( remotePublicKilde, opts, syncError );
 }

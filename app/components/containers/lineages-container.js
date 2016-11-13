@@ -15,6 +15,10 @@ export default class LineagesContainer extends Component {
   }
 
   componentWillMount() {
+    this.getLineageMetaEntries();
+  }
+
+  getLineageMetaEntries() {
     db.getAllLineageMetaEntries().then( lineageMetaEntries => this.setState({
       lineageMetaEntries,
       fetchingLineageKeys: false
@@ -35,9 +39,26 @@ export default class LineagesContainer extends Component {
             <Loader type="line-scale" active={true} />
             : this.state.lineageMetaEntries.map( oneMeta =>
               <li key={oneMeta._id}>
+                <pre>{JSON.stringify( oneMeta ,null,'\t')}</pre>
                 <Link to={`/lineage/${oneMeta._id.substring(2)}/${oneMeta.populationsCount-1}`}>
                   {oneMeta.name}
                 </Link>
+                &nbsp;
+                <span style={{color:(oneMeta.synced ? 'black':'lightgray'), cursor:'pointer'}}>☁</span>
+                &nbsp;
+                <span
+                  style={{opacity:(oneMeta.published ? '1':'0.3'), cursor:'pointer'}}
+                  onClick={() => {
+                    const linegeIdCommon = oneMeta._id.substring(2);
+                    const publishedStatus = ! oneMeta.published;
+                    db.setLineagePublishedStatus(
+                      linegeIdCommon, publishedStatus
+                    ).then( () => {
+                      this.getLineageMetaEntries();
+                    });
+                  }}>
+                  🌍
+                </span>
               </li>
             )
           }
