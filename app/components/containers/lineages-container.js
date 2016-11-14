@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
-import * as db from '../../persistence/db-local';
+import * as dbLocal from '../../persistence/db-local';
+
 import { Loader } from 'react-loaders';
 
 export default class LineagesContainer extends Component {
@@ -19,7 +20,7 @@ export default class LineagesContainer extends Component {
   }
 
   getLineageMetaEntries() {
-    db.getAllLineageMetaEntries().then( lineageMetaEntries => this.setState({
+    dbLocal.getAllLineageMetaEntries().then( lineageMetaEntries => this.setState({
       lineageMetaEntries,
       fetchingLineageKeys: false
     }) );
@@ -51,7 +52,7 @@ export default class LineagesContainer extends Component {
                   onClick={() => {
                     const linegeIdCommon = oneMeta._id.substring(2);
                     const publishedStatus = ! oneMeta.published;
-                    db.setLineagePublishedStatus(
+                    dbLocal.setLineagePublishedStatus(
                       linegeIdCommon, publishedStatus
                     ).then( () => {
                       this.getLineageMetaEntries();

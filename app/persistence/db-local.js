@@ -1,8 +1,8 @@
 import PouchDB from 'pouchdb-browser';
+import { remotePublicKilde, remoteUserKilde } from './db-urls';
+import { sortRowsByUpdated } from './db-common';
 
 const db = new PouchDB('wavekilde');
-let remoteUserKilde = false;
-let remotePublicKilde = 'https://12aa56b4-b71f-4ce0-a2c5-a431b89eda45-bluemix.cloudant.com/wavekilde';
 
 
 export function initializeLineage( key, name, populations ) {
@@ -54,18 +54,13 @@ export function getPopulationFromLineage( key, populationIndex ) {
   }).catch( err => console.log(err) );
 }
 
-export function getAllLineageMetaEntries () {
+export function getAllLineageMetaEntries() {
+
   return db.allDocs({
     startkey: 'l_', endkey: 'l_\uffff',
     include_docs: true
   }).then( result => {
-    console.log("result.rows.length: ", result.rows.length);
-    result.rows.sort( (a, b) => {
-      if( a.doc.updated > b.doc.updated ) return -1;
-      if( a.doc.updated < b.doc.updated ) return 1;
-      return 0;
-    });
-    console.log( 'result.rows: ', result.rows );
+    sortRowsByUpdated( result );
     return result.rows.map( oneRow => oneRow.doc );
   }).catch( err => console.error(err) );
 }
@@ -77,9 +72,9 @@ export function getLineageMeta( lineageId ) {
 }
 
 export function setLineagePublishedStatus( lineageId, isPublished ) {
-  console.log("lineageId: ", lineageId);
-  console.log("isPublished: ", isPublished);
+
   setLineagePopulationsPublishedStatus( lineageId, isPublished );
+
   return setLineageMetaPublishedStatus( lineageId, isPublished );
 }
 
@@ -115,7 +110,7 @@ function getLineageKey( key ) {
 
 
 
-// Initialise a one way replication to a remote server of published data
+// Initialise a one way replication of published data to a remote server
 function replicateToPublicKilde() {
   const opts = {
     live: true,
